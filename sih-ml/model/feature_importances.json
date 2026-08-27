@@ -1,0 +1,16 @@
+{
+  "compensation_paid_pct": 0.254,
+  "days_since_forest_clearance_needed": 0.1704,
+  "court_cases_active": 0.1555,
+  "court_cases_recent_90d": 0.1001,
+  "possession_refusing_pct": 0.074,
+  "forest_clearance_applied": 0.0537,
+  "st_families": 0.0471,
+  "rr_progress_pct": 0.0341,
+  "dept_response_days": 0.028,
+  "court_case_avg_age_days": 0.0209,
+  "months_elapsed": 0.0191,
+  "total_land_area_hectares": 0.0179,
+  "est_families_affected": 0.0173,
+  "months_total": 0.0079
+}

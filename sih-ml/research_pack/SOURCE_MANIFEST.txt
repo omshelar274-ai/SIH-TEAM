@@ -1,0 +1,44 @@
+SIH 26017 LAND ACQUISITION DELAY — SOURCE MANIFEST
+Generated 26 Aug 2026
+
+PRIMARY / GOVERNMENT
+1. MoSPI PAIMANA main portal:
+https://paimana-proj.mospi.gov.in/
+2. MoSPI public dashboard:
+https://ipm.mospi.gov.in/Home/PublicDashboard
+3. MoSPI project monitoring / IPMD:
+https://ipm.mospi.gov.in/EditOcms/DynamicPages?pageid=34
+4. MoSPI FAQ / OCMS:
+https://ipm.mospi.gov.in/FAQ/Index
+5. MoSPI What's New / report archive:
+https://ipm.mospi.gov.in/WhatsNewViewMore/ViewMore
+6. Example January 2026 Flash Report:
+https://ipm.mospi.gov.in/Content/PDF/FlashReport_January_2026.pdf
+7. Example October 2025 Flash Report:
+https://www.mospi.gov.in/sites/default/files/publication_reports/FlashReport_October_2025.pdf
+
+RESEARCH PAPER — TIME DELAYS / RANDOM FOREST
+8. Andrić et al. (2025), Investigating the possible regression functions for modelling delays in infrastructure projects in South Asia:
+https://www.sciencedirect.com/science/article/pii/S1226798825003241
+DOI: 10.1016/j.kscej.2025.100209
+ResearchGate full-text mirror:
+https://www.researchgate.net/publication/389525082_Investigating_the_possible_regression_functions_for_modelling_delays_in_infrastructure_projects_in_South_Asia
+
+RESEARCH PAPER — COST OVERRUNS / SAME 138-PROJECT DATABASE
+9. Andrić et al. (2024), Determining Cost and Causes of Overruns in Infrastructure Projects in South Asia:
+https://www.mdpi.com/2071-1050/16/24/11159
+DOI: 10.3390/su162411159
+
+RESEARCH PAPER — INDIA / LAND ACQUISITION RII
+10. Devi & Sindhu (2025), Delay Analysis of Infrastructure Construction Projects in India:
+https://link.springer.com/article/10.1007/s40030-025-00899-5
+DOI: 10.1007/s40030-025-00899-5
+Institutional copy:
+https://impressions.manipal.edu/open-access-archive/12698
+
+IMPORTANT DATA PROVENANCE NOTE
+The 138-project research database was assembled from 108 ADB completion reports and 30 MoSPI projects/reports. The 138 records are NOT confirmed here as a publicly downloadable CSV. Do not claim that a ready-made CSV was obtained unless the original authors/supplementary files are located. Reconstructing it from ADB/MoSPI source reports is the defensible route.
+
+MoSPI states that OCMS captures projects of Rs. 150 crore and above and includes project progress, financial parameters, and reasons/issues accounting for schedule and cost slippages. The public dashboard currently exposes aggregate/project-monitoring views.
+
+DO NOT LABEL SYNTHETIC LAND-ACQUISITION VARIABLES AS REAL GOVERNMENT DATA.

@@ -1,0 +1,16 @@
+[
+  "compensation_paid_pct",
+  "court_cases_active",
+  "court_cases_recent_90d",
+  "court_case_avg_age_days",
+  "rr_progress_pct",
+  "possession_refusing_pct",
+  "st_families",
+  "forest_clearance_applied",
+  "days_since_forest_clearance_needed",
+  "months_elapsed",
+  "months_total",
+  "dept_response_days",
+  "total_land_area_hectares",
+  "est_families_affected"
+]

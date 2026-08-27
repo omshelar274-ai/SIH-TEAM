@@ -1,0 +1,35 @@
+field,type,definition,provenance
+project_id,string,Unique project identifier,Real/derived
+project_name,string,Project name,Real
+country,categorical,Country,Real
+state,categorical,Indian state/UT where applicable,Real/derived
+project_type,categorical,"Road/highway, energy, railway, etc.",Real
+estimated_cost_usd_million,numeric,Estimated/original project cost,Real where available
+actual_cost_usd_million,numeric,Actual/final project cost,Real where available
+planned_duration_months,numeric,Planned duration,Real where available
+implementation_period_months,numeric,Actual implementation period,Real where available
+time_overrun_months,numeric,Actual/anticipated delay in months; target for regression where supported,Real/derived
+time_overrun_pct,numeric,100*(actual duration-planned duration)/planned duration,Derived
+cost_overrun_pct,numeric,100*(actual cost-estimated cost)/estimated cost,Derived
+delay_land_acquisition,binary,Land acquisition identified as a delay cause,Real/text-derived; do not invent
+delay_resettlement,binary,R&R identified as a delay cause,Real/text-derived
+delay_procurement,binary,Procurement delay identified,Real/text-derived
+delay_contractor,binary,Contractor delay identified,Real/text-derived
+delay_design_revision,binary,Design revision identified,Real/text-derived
+land_required_acres,numeric,Total land required,Needs project-level LA source
+land_acquired_acres,numeric,Land acquired,Needs project-level LA source
+acquisition_pct,numeric,100*land_acquired/land_required,Derived
+affected_parcels,numeric,Affected land parcels,Needs project-level LA source
+affected_families,numeric,Affected families/households,Needs project-level LA source
+compensation_required,numeric,Total compensation liability,Needs project-level LA source
+compensation_paid,numeric,Compensation paid,Needs project-level LA source
+compensation_paid_pct,numeric,100*paid/required,Derived
+pending_legal_cases,numeric,Pending court/legal cases,Needs project-level LA source
+rr_completion_pct,numeric,R&R completion percentage,Needs project-level LA source
+forest_clearance,binary,Clearance pending/issue indicator,Real/derived if reported
+environment_clearance,binary,Clearance pending/issue indicator,Real/derived if reported
+encroachment_cases,numeric,Reported encroachment cases,Needs project-level source
+row_issues,numeric,ROW/ROU issues,Needs project-level source
+approval_delay_months,numeric,Reported approval/administrative delay,Needs project-level source
+historical_state_delay_rate,numeric,Historical delay rate computed from training data,Derived
+delay_class,binary,1 if project delayed under a documented target definition,Derived
