@@ -1,0 +1,8 @@
+{
+  "framework": "scikit-learn",
+  "classifier": "GradientBoostingClassifier",
+  "regressor": "RandomForestRegressor",
+  "mae_months": 1.64,
+  "r2_score": 0.917,
+  "total_features": 20
+}

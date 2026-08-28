@@ -43,55 +43,60 @@ export default function LAODashboardPage() {
 
   async function load() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    try {
+      let userDistrict = "Nagpur";
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, district")
+            .eq("id", user.id)
+            .single();
+          if (profile?.district) userDistrict = profile.district;
+          if (profile?.full_name) setUserName(profile.full_name);
+        }
+      } catch {}
+      setDistrict(userDistrict);
+
+      const { data: projectData, error: projectErr } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("district", userDistrict)
+        .order("created_at", { ascending: false });
+
+      if (projectErr || !projectData) {
+        return;
+      }
+
+      const projectsWithCounts = await Promise.all(
+        (projectData as ProjectRecord[]).map(async (project) => {
+          let pending = 0;
+          let total = 0;
+          try {
+            const { data: families } = await supabase
+              .from("families")
+              .select("verification_status")
+              .eq("project_id", project.id);
+
+            pending = families?.filter((f) => f.verification_status === "Pending").length ?? 0;
+            total = families?.length ?? 0;
+          } catch {}
+
+          return {
+            project,
+            pendingCount: pending,
+            totalCount: total,
+          };
+        })
+      );
+
+      setProjects(projectsWithCounts);
+    } catch (err) {
+      console.warn("LAO load error:", err);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, district")
-      .eq("id", user.id)
-      .single();
-
-    const userDistrict = profile?.district || "Nagpur";
-    setDistrict(userDistrict);
-    if (profile?.full_name) {
-      setUserName(profile.full_name);
-    }
-
-    const { data: projectData, error: projectErr } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("district", userDistrict)
-      .order("created_at", { ascending: false });
-
-    if (projectErr || !projectData) {
-      setLoading(false);
-      return;
-    }
-
-    const projectsWithCounts = await Promise.all(
-      (projectData as ProjectRecord[]).map(async (project) => {
-        const { data: families } = await supabase
-          .from("families")
-          .select("verification_status")
-          .eq("project_id", project.id);
-
-        const pending = families?.filter((f) => f.verification_status === "Pending").length ?? 0;
-        const total = families?.length ?? 0;
-
-        return {
-          project,
-          pendingCount: pending,
-          totalCount: total,
-        };
-      })
-    );
-
-    setProjects(projectsWithCounts);
-    setLoading(false);
   }
 
   useEffect(() => {

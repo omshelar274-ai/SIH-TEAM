@@ -12,5 +12,11 @@
   "months_total",
   "dept_response_days",
   "total_land_area_hectares",
-  "est_families_affected"
+  "est_families_affected",
+  "lao_backlog_ratio",
+  "political_cycle_proximity",
+  "document_rejection_rate",
+  "is_schedule_v_tribal",
+  "is_forest_land",
+  "is_urban_commercial"
 ]

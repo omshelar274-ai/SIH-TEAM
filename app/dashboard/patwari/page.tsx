@@ -49,45 +49,62 @@ export default function PatwariDashboardPage() {
 
   async function load() {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    try {
+      let userDistrict = "Nagpur";
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, district")
+            .eq("id", user.id)
+            .single();
+          if (profile?.district) userDistrict = profile.district;
+          if (profile?.full_name) setUserName(profile.full_name);
+        }
+      } catch {}
+      setDistrict(userDistrict);
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, district")
-      .eq("id", user.id)
-      .single();
+      const { data: projectData } = await supabase
+        .from("projects")
+        .select("id, project_name, project_type, district, villages_affected, status, start_date, target_handover_date, est_families_affected")
+        .eq("district", userDistrict)
+        .order("created_at", { ascending: false });
 
-    const userDistrict = profile?.district || "Nagpur";
-    setDistrict(userDistrict);
-    if (profile?.full_name) setUserName(profile.full_name);
+      const rows = (projectData as ProjectRow[]) ?? [];
+      setProjects(rows);
 
-    const { data: projectData } = await supabase
-      .from("projects")
-      .select("id, project_name, project_type, district, villages_affected, status, start_date, target_handover_date, est_families_affected")
-      .eq("district", userDistrict)
-      .order("created_at", { ascending: false });
+      const summaryMap: Record<string, FamilySummary> = {};
+      await Promise.all(rows.map(async (p) => {
+        try {
+          const { data: fams } = await supabase
+            .from("families")
+            .select("payment_status, court_case_status, verification_status")
+            .eq("project_id", p.id);
 
-    const rows = (projectData as ProjectRow[]) ?? [];
-    setProjects(rows);
-
-    const summaryMap: Record<string, FamilySummary> = {};
-    await Promise.all(rows.map(async (p) => {
-      const { data: fams } = await supabase
-        .from("families")
-        .select("payment_status, court_case_status, verification_status")
-        .eq("project_id", p.id);
-
-      summaryMap[p.id] = {
-        projectId: p.id,
-        total: fams?.length ?? 0,
-        pending: fams?.filter(f => f.verification_status === "Pending").length ?? 0,
-        paid:   fams?.filter(f => f.payment_status === "Paid").length ?? 0,
-        activeCases: fams?.filter(f => f.court_case_status === "Active").length ?? 0,
-      };
-    }));
-    setSummaries(summaryMap);
-    setLoading(false);
+          summaryMap[p.id] = {
+            projectId: p.id,
+            total: fams?.length ?? 0,
+            pending: fams?.filter(f => f.verification_status === "Pending").length ?? 0,
+            paid: fams?.filter(f => f.payment_status === "Paid").length ?? 0,
+            activeCases: fams?.filter(f => f.court_case_status === "Active").length ?? 0,
+          };
+        } catch {
+          summaryMap[p.id] = {
+            projectId: p.id,
+            total: 0,
+            pending: 0,
+            paid: 0,
+            activeCases: 0,
+          };
+        }
+      }));
+      setSummaries(summaryMap);
+    } catch (err) {
+      console.warn("Patwari load error:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

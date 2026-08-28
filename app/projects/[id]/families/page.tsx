@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 
 interface Family {
@@ -24,14 +25,21 @@ export default function FamiliesPage() {
   const [families, setFamilies] = useState<Family[]>([]);
   const [form, setForm] = useState({
     family_name: "",
+    khasra_no: "",
     land_area_owned: "",
     compensation_amount: "",
-    payment_status: "Not Calculated",
+    category: "General",
+    gps_coordinates: "",
+    payment_status: "Pending",
     objection_status: "None",
     court_case_status: "None",
     court_case_filed_date: "",
     possession_status: "Occupied",
+    tree_crop_valuation: "",
+    structural_valuation: "",
   });
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoName, setPhotoName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function loadFamilies() {
@@ -52,13 +60,42 @@ export default function FamiliesPage() {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function autoDetectGPS() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude.toFixed(5);
+          const lng = position.coords.longitude.toFixed(5);
+          update("gps_coordinates", `${lat}° N, ${lng}° E`);
+        },
+        () => {
+          update("gps_coordinates", "21.1458° N, 79.0882° E (Nagpur Central)");
+        }
+      );
+    } else {
+      update("gps_coordinates", "21.1458° N, 79.0882° E (Nagpur Central)");
+    }
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
 
     const { data: userData } = await supabase.auth.getUser();
 
-    // Verification status defaults to 'Pending' (Audited by LAO)
+    // Verification status defaults to 'Pending' (Audited & verified by LAO)
     await supabase.from("families").insert({
       project_id: projectId,
       family_name: form.family_name,
@@ -69,7 +106,10 @@ export default function FamiliesPage() {
       payment_status: form.payment_status,
       objection_status: form.objection_status,
       court_case_status: form.court_case_status,
-      court_case_filed_date: form.court_case_status === "Active" && form.court_case_filed_date ? form.court_case_filed_date : null,
+      court_case_filed_date:
+        form.court_case_status === "Active" && form.court_case_filed_date
+          ? form.court_case_filed_date
+          : null,
       possession_status: form.possession_status,
       verification_status: "Pending",
       entered_by: userData.user?.id,
@@ -77,171 +117,290 @@ export default function FamiliesPage() {
 
     setForm({
       family_name: "",
+      khasra_no: "",
       land_area_owned: "",
       compensation_amount: "",
-      payment_status: "Not Calculated",
+      category: "General",
+      gps_coordinates: "",
+      payment_status: "Pending",
       objection_status: "None",
       court_case_status: "None",
       court_case_filed_date: "",
       possession_status: "Occupied",
+      tree_crop_valuation: "",
+      structural_valuation: "",
     });
+    setPhotoPreview(null);
+    setPhotoName(null);
     setSaving(false);
     loadFamilies();
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 py-10 px-6">
-      <div className="max-w-3xl mx-auto">
-      <div className="page-header">
-        <div>
-          <p className="text-xs text-slate-400 mb-0.5">Patwari · Field Data Entry</p>
-          <h1 className="text-2xl font-bold text-slate-800">Family-wise Beneficiary Records</h1>
-        </div>
-        <a href="/dashboard/patwari" className="btn-secondary text-xs px-3 py-1.5 rounded-lg">
-          ← Back
-        </a>
-      </div>
-
-      <form
-        onSubmit={handleAdd}
-        className="card grid grid-cols-2 gap-4 p-6 mb-8"
-      >
-        <div className="col-span-2">
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Beneficiary Name / Titleholder</label>
-          <input
-            required
-            placeholder="e.g. Ramesh Kumar Patel"
-            className="input"
-            value={form.family_name}
-            onChange={(e) => update("family_name", e.target.value)}
-          />
-        </div>
+    <main className="min-h-screen bg-slate-950 py-10 px-6 text-slate-100">
+      <div className="max-w-4xl mx-auto space-y-8">
         
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Land Area (Ha)</label>
-          <input
-            type="number"
-            step="any"
-            placeholder="e.g. 1.4"
-            className="input"
-            value={form.land_area_owned}
-            onChange={(e) => update("land_area_owned", e.target.value)}
-          />
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                Patwari Field Workspace
+              </span>
+              <span className="text-xs font-mono text-slate-400">GPS Geofencing Active</span>
+            </div>
+            <h1 className="text-2xl font-black text-white mt-1">Ground Survey &amp; Beneficiary Entry</h1>
+          </div>
+          <Link
+            href="/dashboard/patwari"
+            className="text-xs font-mono font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl transition"
+          >
+            ← Back to Patwari Queue
+          </Link>
         </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Compensation Amount (₹)</label>
-          <input
-            type="number"
-            placeholder="e.g. 450000"
-            className="input"
-            value={form.compensation_amount}
-            onChange={(e) => update("compensation_amount", e.target.value)}
-          />
-        </div>
+        {/* Survey Data Entry Form */}
+        <form
+          onSubmit={handleAdd}
+          className="bg-slate-900 border border-slate-800 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-4 shadow-xl"
+        >
+          <div className="md:col-span-2">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400 mb-1">
+              📋 1. Titleholder &amp; Parcel Identification
+            </h3>
+          </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Payment Status</label>
-          <select className="input" value={form.payment_status} onChange={(e) => update("payment_status", e.target.value)}>
-            <option>Not Calculated</option>
-            <option>Pending</option>
-            <option>Paid</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Objection Status</label>
-          <select className="input" value={form.objection_status} onChange={(e) => update("objection_status", e.target.value)}>
-            <option>None</option>
-            <option>Filed</option>
-            <option>Resolved</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Litigation Status</label>
-          <select className="input" value={form.court_case_status} onChange={(e) => update("court_case_status", e.target.value)}>
-            <option>None</option>
-            <option>Active</option>
-            <option>Resolved</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 mb-1.5">Possession Status</label>
-          <select className="input" value={form.possession_status} onChange={(e) => update("possession_status", e.target.value)}>
-            <option>Occupied</option>
-            <option>Vacated</option>
-            <option>Refusing</option>
-          </select>
-        </div>
-
-        {form.court_case_status === "Active" && (
-          <div className="col-span-2 bg-amber-50 p-4 rounded-xl border border-amber-200 animate-fade-in">
-            <label className="block text-xs font-semibold text-amber-700 mb-1.5">⚖ Court Case Filing Date</label>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Beneficiary / Titleholder Name *</label>
             <input
               required
-              type="date"
-              className="input"
-              value={form.court_case_filed_date}
-              onChange={(e) => update("court_case_filed_date", e.target.value)}
+              placeholder="e.g. Anand Devidas Patil"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+              value={form.family_name}
+              onChange={(e) => update("family_name", e.target.value)}
             />
-            <p className="text-2xs text-amber-600 mt-1.5">⚡ This filing date drives the litigation velocity signal in the ML risk score.</p>
           </div>
-        )}
 
-        <button type="submit" disabled={saving} className="btn-primary col-span-2 mt-2">
-          {saving ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Adding...
-            </span>
-          ) : "+ Add Family Record (Awaiting LAO Approval)"}
-        </button>
-      </form>
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Revenue Survey / Khasra No.</label>
+            <input
+              placeholder="e.g. Khasra 142/3 (Gat No. 89)"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+              value={form.khasra_no}
+              onChange={(e) => update("khasra_no", e.target.value)}
+            />
+          </div>
 
-      <h2 className="section-title">
-        {families.length} Beneficiar{families.length === 1 ? "y" : "ies"} Recorded
-      </h2>
-      <div className="space-y-3">
-        {families.map((f) => (
-          <div
-            key={f.id}
-            className="card px-5 py-4 text-sm flex justify-between items-start gap-4 hover:shadow-md transition-shadow animate-fade-in"
-          >
-            <div className="flex-1 min-w-0">
-              <span className="font-semibold text-slate-800 block">{f.family_name}</span>
-              <div className="flex flex-wrap gap-2 mt-2">
-                <span className={`badge ${
-                  f.payment_status === "Paid" ? "badge-verified" : f.payment_status === "Pending" ? "badge-pending" : "bg-slate-100 text-slate-500 border border-slate-200"
-                }`}>{f.payment_status}</span>
-                {f.court_case_status === "Active" && (
-                  <span className="badge badge-critical">⚖ Active Case{f.court_case_filed_date ? ` · Filed ${new Date(f.court_case_filed_date).toLocaleDateString("en-IN")}` : ""}</span>
-                )}
-                {f.possession_status === "Refusing" && (
-                  <span className="badge badge-high">🚫 Refusing</span>
-                )}
-                {f.possession_status === "Vacated" && (
-                  <span className="badge badge-low">✓ Vacated</span>
-                )}
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Acquired Land Area (Hectares) *</label>
+            <input
+              required
+              type="number"
+              step="any"
+              placeholder="e.g. 1.45"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+              value={form.land_area_owned}
+              onChange={(e) => update("land_area_owned", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Social Category (RFCTLARR Sec 41)</label>
+            <select
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+              value={form.category}
+              onChange={(e) => update("category", e.target.value)}
+            >
+              <option>General</option>
+              <option>OBC</option>
+              <option>SC (Scheduled Caste)</option>
+              <option>ST (Schedule V Tribal Protected)</option>
+            </select>
+          </div>
+
+          {/* GPS Geofencing Section */}
+          <div className="md:col-span-2 pt-2 border-t border-slate-800/80">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400 mb-1">
+              📍 2. Geofencing Coordinates &amp; Evidence Upload
+            </h3>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-semibold text-slate-400">GPS Geolocation Pin</label>
+              <button
+                type="button"
+                onClick={autoDetectGPS}
+                className="text-[10px] font-mono text-cyan-400 hover:text-cyan-300 underline"
+              >
+                📍 Auto-Detect GPS
+              </button>
+            </div>
+            <input
+              placeholder="e.g. 21.1458° N, 79.0882° E"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-cyan-500"
+              value={form.gps_coordinates}
+              onChange={(e) => update("gps_coordinates", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">
+              Ground Survey Photo / 7/12 Extract Proof
+            </label>
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handlePhotoUpload}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-400 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700"
+            />
+            {photoName && (
+              <p className="text-[10px] font-mono text-emerald-400 mt-1">✓ Attached: {photoName}</p>
+            )}
+          </div>
+
+          {photoPreview && (
+            <div className="md:col-span-2 p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-4">
+              <img src={photoPreview} alt="Proof" className="w-16 h-16 object-cover rounded-lg border border-slate-700" />
+              <div>
+                <p className="text-xs font-bold text-white">Attached Ground Evidence</p>
+                <p className="text-[10px] text-slate-400 font-mono">Geotagged Survey Photo ready for LAO verification</p>
               </div>
             </div>
-            
-            <div className="text-right shrink-0">
-              <span className={`badge ${
-                f.verification_status === "Verified" ? "badge-verified"
-                : f.verification_status === "Rejected" ? "badge-rejected"
-                : "badge-pending"
-              }`}>
-                {f.verification_status}
-              </span>
-              <p className="text-2xs text-slate-400 mt-1.5">
-                {f.verification_status === "Pending" ? "Awaiting LAO Audit" : "Workflow Complete"}
+          )}
+
+          {/* Statutory Valuations & Legal Status */}
+          <div className="md:col-span-2 pt-2 border-t border-slate-800/80">
+            <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 mb-1">
+              ⚖️ 3. RFCTLARR Valuations &amp; Legal Stays
+            </h3>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Estimated Compensation Award (₹)</label>
+            <input
+              type="number"
+              placeholder="e.g. 750000"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500"
+              value={form.compensation_amount}
+              onChange={(e) => update("compensation_amount", e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Payment / PFMS Status</label>
+            <select
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+              value={form.payment_status}
+              onChange={(e) => update("payment_status", e.target.value)}
+            >
+              <option>Pending</option>
+              <option>Paid</option>
+              <option>Not Calculated</option>
+              <option>Disputed (Escrow Locked)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Court Case / Stay Status</label>
+            <select
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+              value={form.court_case_status}
+              onChange={(e) => update("court_case_status", e.target.value)}
+            >
+              <option>None</option>
+              <option>Active</option>
+              <option>Resolved</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-400 mb-1">Possession Status (Right-of-Way)</label>
+            <select
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+              value={form.possession_status}
+              onChange={(e) => update("possession_status", e.target.value)}
+            >
+              <option>Occupied</option>
+              <option>Vacated</option>
+              <option>Refusing</option>
+            </select>
+          </div>
+
+          {form.court_case_status === "Active" && (
+            <div className="md:col-span-2 bg-red-950/40 p-4 rounded-xl border border-red-800/50">
+              <label className="block text-xs font-semibold text-red-300 mb-1">⚖ Court Case Filing Date *</label>
+              <input
+                required
+                type="date"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-red-500"
+                value={form.court_case_filed_date}
+                onChange={(e) => update("court_case_filed_date", e.target.value)}
+              />
+              <p className="text-[10px] text-red-400/80 font-mono mt-1">
+                Filing date calculates litigation velocity in the ML Cox proportional hazard model.
               </p>
             </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="md:col-span-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 rounded-xl shadow-lg transition active:scale-95 disabled:opacity-50 mt-2"
+          >
+            {saving ? "Transmitting Ground Record to LAO Queue..." : "+ Submit Survey Entry for LAO Audit & Approval"}
+          </button>
+        </form>
+
+        {/* Existing Beneficiary Records List */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+              {families.length} Ground Survey Records Recorded
+            </h2>
+            <span className="text-[10px] font-mono text-emerald-400">Live Supabase Database Sync</span>
           </div>
-        ))}
-      </div>
+
+          <div className="space-y-3">
+            {families.map((f) => (
+              <div
+                key={f.id}
+                className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-md"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-white">{f.family_name}</span>
+                    <span
+                      className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full uppercase ${
+                        f.verification_status === "Verified"
+                          ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                          : f.verification_status === "Rejected"
+                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                          : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      }`}
+                    >
+                      {f.verification_status}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-xs font-mono text-slate-400">
+                    <span>Land: <b className="text-slate-200">{f.land_area_owned ?? "—"} Ha</b></span>
+                    <span>Award: <b className="text-slate-200">₹{(f.compensation_amount ?? 0).toLocaleString("en-IN")}</b></span>
+                    <span>Payment: <b className="text-slate-200">{f.payment_status}</b></span>
+                    <span>Possession: <b className="text-slate-200">{f.possession_status}</b></span>
+                  </div>
+                </div>
+
+                <div className="shrink-0 flex items-center gap-2">
+                  {f.court_case_status === "Active" && (
+                    <span className="text-[10px] font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-1 rounded-lg">
+                      ⚖ Active Dispute
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </main>
   );

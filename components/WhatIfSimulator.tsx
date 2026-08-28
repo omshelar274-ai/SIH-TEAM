@@ -15,7 +15,7 @@ export default function WhatIfSimulator({
   onClose,
 }: WhatIfSimulatorProps) {
   const [compensation, setCompensation] = useState<number>(baseMetrics.compensationPaidPct);
-  const [hasStay, setHasStay] = useState<boolean>(baseMetrics.courtCasesActive > 15);
+  const [activeCases, setActiveCases] = useState<number>(baseMetrics.courtCasesActive);
   const [recentCases, setRecentCases] = useState<number>(baseMetrics.courtCasesRecent90d);
   const [forestApplied, setForestApplied] = useState<boolean>(baseMetrics.forestClearanceApplied);
   const [possessionRefusing, setPossessionRefusing] = useState<number>(baseMetrics.possessionRefusingPct);
@@ -24,10 +24,10 @@ export default function WhatIfSimulator({
   const baseResult: RiskResult = simulateWhatIf(baseMetrics, {});
   const simulatedResult: RiskResult = simulateWhatIf(baseMetrics, {
     compensationPaidPct: compensation,
+    courtCasesActive: activeCases,
     courtCasesRecent90d: recentCases,
-    courtCasesActive: hasStay ? Math.max(16, baseMetrics.courtCasesActive) : Math.min(5, baseMetrics.courtCasesActive),
     forestClearanceApplied: forestApplied,
-    daysSinceForestClearanceNeeded: forestApplied ? 0 : baseMetrics.daysSinceForestClearanceNeeded,
+    daysSinceForestClearanceNeeded: forestApplied ? 0 : Math.max(90, baseMetrics.daysSinceForestClearanceNeeded),
     possessionRefusingPct: possessionRefusing,
   });
 
@@ -40,15 +40,15 @@ export default function WhatIfSimulator({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-indigo-400 font-mono text-xs font-bold uppercase tracking-wider">
-              ● Scenario Simulation Engine
+              ● Policy Simulation Engine
             </span>
-            <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30">
-              Interactive What-If
+            <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30 font-bold">
+              Interactive What-If Interventions
             </span>
           </div>
           <h3 className="text-lg font-black text-white mt-1">{projectName}</h3>
           <p className="text-xs text-slate-400">
-            Adjust policy levers & administrative interventions below to observe real-time risk reduction and lead-time gains.
+            Simulate administrative interventions below to observe real-time risk reduction and statutory lead-time gains.
           </p>
         </div>
         {onClose && (
@@ -64,19 +64,19 @@ export default function WhatIfSimulator({
       {/* Score Comparison Strip */}
       <div className="grid grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-center">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Current Score</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Current Score</p>
           <p className="text-2xl font-black text-slate-200 mt-0.5">{baseResult.riskScore}/100</p>
           <span className="text-[10px] text-slate-400 font-mono">{baseResult.riskLevel}</span>
         </div>
         <div className="border-x border-slate-800 px-2">
-          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Simulated Score</p>
+          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono">Simulated Score</p>
           <p className={`text-2xl font-black mt-0.5 ${simulatedResult.riskScore > 60 ? "text-amber-400" : "text-emerald-400"}`}>
             {simulatedResult.riskScore}/100
           </p>
           <span className="text-[10px] text-indigo-300 font-mono">{simulatedResult.riskLevel}</span>
         </div>
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Impact</p>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Net Impact</p>
           <p className={`text-2xl font-black mt-0.5 ${isImproved ? "text-emerald-400" : deltaScore === 0 ? "text-slate-400" : "text-red-400"}`}>
             {isImproved ? `▼ ${Math.abs(deltaScore)} pts` : deltaScore === 0 ? "0 pts" : `▲ +${deltaScore} pts`}
           </p>
@@ -94,7 +94,7 @@ export default function WhatIfSimulator({
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-slate-300 font-bold flex items-center gap-1.5">
-              <span>💰</span> Compensation Disbursed:
+              <span>💰</span> Compensation Disbursed (PFMS):
             </span>
             <span className="text-indigo-400 font-extrabold">{compensation}%</span>
           </div>
@@ -105,108 +105,102 @@ export default function WhatIfSimulator({
             step="1"
             value={compensation}
             onChange={(e) => setCompensation(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
           />
-          <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-            <span>0% (Severe Delay)</span>
-            <span>Target: ≥80% (Safe)</span>
-            <span>100% (Completed)</span>
-          </div>
         </div>
 
-        {/* 2. Possession Refusal */}
+        {/* 2. Active Litigation / Injunctions */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-slate-300 font-bold flex items-center gap-1.5">
-              <span>🏡</span> Possession Refusing Rate:
+              <span>⚖️</span> Active Court Cases & Injunctions:
             </span>
-            <span className="text-indigo-400 font-extrabold">{possessionRefusing}%</span>
+            <span className="text-amber-400 font-extrabold">{activeCases} cases</span>
           </div>
           <input
             type="range"
             min="0"
-            max="100"
+            max="30"
             step="1"
-            value={possessionRefusing}
-            onChange={(e) => setPossessionRefusing(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            value={activeCases}
+            onChange={(e) => setActiveCases(Number(e.target.value))}
+            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
           />
-          <div className="flex justify-between text-[10px] text-slate-400 mt-1">
-            <span>0% (Vacated)</span>
-            <span>PRAGATI Threshold: &lt;25%</span>
-            <span>100% (Blocked)</span>
-          </div>
         </div>
 
-        {/* 3. Recent Legal Cases */}
+        {/* 3. Recent 90-Day Dispute Velocity */}
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-slate-300 font-bold flex items-center gap-1.5">
-              <span>⚖️</span> Recent Court Filings (90d Velocity):
+              <span>⚡</span> Litigation Velocity (New in Last 90d):
             </span>
-            <span className="text-indigo-400 font-extrabold">{recentCases} cases</span>
+            <span className="text-rose-400 font-extrabold">{recentCases} cases</span>
           </div>
           <input
             type="range"
             min="0"
-            max="25"
+            max="15"
             step="1"
             value={recentCases}
             onChange={(e) => setRecentCases(Number(e.target.value))}
-            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500"
           />
         </div>
 
-        {/* 4. Action Toggles */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <button
-            type="button"
-            onClick={() => setHasStay(!hasStay)}
-            className={`p-3 rounded-xl border text-left transition flex justify-between items-center ${
-              hasStay
-                ? "bg-red-500/10 border-red-500/30 text-red-300"
-                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-            }`}
-          >
-            <div>
-              <p className="font-bold text-[11px]">High Court Stay Order</p>
-              <p className="text-[9px] opacity-75">{hasStay ? "Active Injunction" : "Vacated / Cleared"}</p>
-            </div>
-            <span className="text-sm font-black">{hasStay ? "🔴 YES" : "🟢 NO"}</span>
-          </button>
+        {/* 4. Possession Refusal % */}
+        <div>
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-slate-300 font-bold flex items-center gap-1.5">
+              <span>🚫</span> Land Possession Refusal Rate:
+            </span>
+            <span className="text-red-400 font-extrabold">{possessionRefusing}%</span>
+          </div>
+          <input
+            type="range"
+            min="0"
+            max="50"
+            step="1"
+            value={possessionRefusing}
+            onChange={(e) => setPossessionRefusing(Number(e.target.value))}
+            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500"
+          />
+        </div>
 
+        {/* 5. Forest Clearance Status */}
+        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800">
+          <span className="text-slate-300 font-bold flex items-center gap-1.5">
+            <span>🌲</span> Stage-1 / Stage-2 Forest NOC Granted:
+          </span>
           <button
             type="button"
             onClick={() => setForestApplied(!forestApplied)}
-            className={`p-3 rounded-xl border text-left transition flex justify-between items-center ${
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
               forestApplied
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                : "bg-amber-500/10 border-amber-500/30 text-amber-300"
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                : "bg-red-500/20 text-red-400 border border-red-500/30"
             }`}
           >
-            <div>
-              <p className="font-bold text-[11px]">Forest Stage 1 Clearance</p>
-              <p className="text-[9px] opacity-75">{forestApplied ? "Filed & In Process" : "Pending Application"}</p>
-            </div>
-            <span className="text-sm font-black">{forestApplied ? "🟢 FILED" : "🟡 PENDING"}</span>
+            {forestApplied ? "✓ Clearance Secured" : "⚠ Overdue / Pending"}
           </button>
         </div>
       </div>
 
-      {/* Simulated 90-day Survival Indicator */}
-      <div className="bg-indigo-950/40 border border-indigo-800/40 p-3 rounded-xl flex items-center justify-between text-xs">
-        <div>
-          <span className="text-indigo-300 font-bold">Predicted 90-Day Delay Probability:</span>
-          <p className="text-[10px] text-slate-400 mt-0.5">Calculated via Cox Proportional Hazards survival function</p>
-        </div>
-        <div className="text-right">
-          <span className="text-lg font-black text-indigo-400">
-            {Math.round(simulatedResult.delayProb90d * 100)}%
-          </span>
-          <p className="text-[9px] text-slate-400">
-            Baseline: {Math.round(baseResult.delayProb90d * 100)}%
-          </p>
-        </div>
+      {/* Reset Interventions */}
+      <div className="flex justify-between items-center pt-2 border-t border-slate-800 text-[11px] font-mono">
+        <button
+          type="button"
+          onClick={() => {
+            setCompensation(baseMetrics.compensationPaidPct);
+            setActiveCases(baseMetrics.courtCasesActive);
+            setRecentCases(baseMetrics.courtCasesRecent90d);
+            setForestApplied(baseMetrics.forestClearanceApplied);
+            setPossessionRefusing(baseMetrics.possessionRefusingPct);
+          }}
+          className="text-slate-400 hover:text-white transition underline"
+        >
+          ↺ Reset to Ground Telemetry
+        </button>
+        <span className="text-slate-500">Real-Time Survival Re-computation</span>
       </div>
     </div>
   );

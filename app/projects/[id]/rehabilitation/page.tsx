@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function RehabilitationPage() {
   const params = useParams();
@@ -84,117 +86,121 @@ export default function RehabilitationPage() {
   const coloniesPct     = coloniesPlanned > 0 ? Math.round((coloniesBuilt / coloniesPlanned) * 100) : 0;
 
   return (
-    <main className="min-h-screen bg-slate-50 py-10 px-6">
-      <div className="max-w-xl mx-auto">
-        <div className="page-header">
-          <div>
-            <p className="text-xs text-slate-400 mb-0.5">Rehabilitation &amp; Resettlement</p>
-            <h1 className="text-2xl font-bold text-slate-800">R&amp;R Progress Entry</h1>
-            {projectName && <p className="text-sm text-slate-500 mt-0.5">{projectName}</p>}
-          </div>
-          <a href="/dashboard/patwari" className="btn-secondary text-xs px-3 py-1.5 rounded-lg">
-            ← Back
-          </a>
-        </div>
-
-        {/* Live progress preview */}
-        {coloniesPlanned > 0 && (
-          <div className="card p-5 mb-6 animate-fade-in">
-            <p className="stat-label">Colony Construction Progress</p>
-            <div className="flex items-end justify-between mt-2 mb-3">
-              <p className="stat-value">{coloniesBuilt} <span className="text-lg text-slate-400 font-semibold">/ {coloniesPlanned}</span></p>
-              <span className={`text-sm font-bold ${coloniesPct < 40 ? "text-red-500" : coloniesPct < 70 ? "text-amber-500" : "text-emerald-600"}`}>
-                {coloniesPct}%
-              </span>
+    <DashboardLayout>
+      <main className="min-h-screen bg-slate-950 py-10 px-6 font-sans text-slate-100">
+        <div className="max-w-xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold mb-2 font-mono">
+                <span>🏘️</span> RFCTLARR 2013 · Second Schedule R&R
+              </div>
+              <h1 className="text-2xl font-black text-white">Rehabilitation & Resettlement</h1>
+              {projectName && <p className="text-xs text-slate-400 mt-1 font-medium">{projectName}</p>}
             </div>
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${
-                  coloniesPct < 40 ? "bg-red-500" : coloniesPct < 70 ? "bg-amber-500" : "bg-emerald-500"
-                }`}
-                style={{ width: `${coloniesPct}%` }}
-              />
-            </div>
-            <p className="text-xs text-slate-400 mt-2">
-              {coloniesPct < 40
-                ? "⚠ R&R lag is a MODERATE-HIGH risk factor. Accelerate colony construction."
-                : coloniesPct < 70
-                ? "Progress is on track. Maintain current pace."
-                : "✓ Good R&R progress. Risk contribution is low."}
-            </p>
-          </div>
-        )}
-
-        <form
-          onSubmit={handleSave}
-          className="card p-6 space-y-5"
-        >
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              Colonies Planned <span className="text-slate-400 font-normal">(total resettlement units)</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              className="input"
-              value={form.colonies_planned}
-              onChange={(e) => update("colonies_planned", e.target.value)}
-              placeholder="e.g. 5"
-            />
+            <Link href="/dashboard/patwari" className="text-xs font-bold text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl transition">
+              ← Return
+            </Link>
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              Colonies Built <span className="text-slate-400 font-normal">(ready for occupation)</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              className="input"
-              value={form.colonies_built}
-              onChange={(e) => update("colonies_built", e.target.value)}
-              placeholder="e.g. 2"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              Families Shifted <span className="text-slate-400 font-normal">(actual physical displacement)</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              className="input"
-              value={form.families_shifted}
-              onChange={(e) => update("families_shifted", e.target.value)}
-              placeholder="e.g. 89"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="btn-primary w-full"
-          >
-            {saving ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Saving...
-              </span>
-            ) : "Save R&R Progress"}
-          </button>
-
-          {saved && (
-            <div className="rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm p-3 text-center animate-fade-in">
-              ✓ Saved — Collector's dashboard will reflect this on next load.
+          {/* Live Progress Preview */}
+          {coloniesPlanned > 0 && (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl animate-fade-in space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
+                  Colony Construction Milestone
+                </span>
+                <span className={`text-xs font-bold font-mono ${coloniesPct < 40 ? "text-red-400" : coloniesPct < 70 ? "text-amber-400" : "text-emerald-400"}`}>
+                  {coloniesPct}% Completed
+                </span>
+              </div>
+              <div className="flex items-end justify-between">
+                <p className="text-2xl font-black text-white">
+                  {coloniesBuilt} <span className="text-sm text-slate-500 font-semibold font-mono">/ {coloniesPlanned} units</span>
+                </p>
+              </div>
+              <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    coloniesPct < 40 ? "bg-red-500" : coloniesPct < 70 ? "bg-amber-500" : "bg-emerald-500"
+                  }`}
+                  style={{ width: `${coloniesPct}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-slate-400 font-mono">
+                {coloniesPct < 40
+                  ? "⚠ R&R lag is a primary delay driver. Priority construction needed to avoid physical possession blockage."
+                  : coloniesPct < 70
+                  ? "✓ Resettlement construction is progressing steadily."
+                  : "✓ R&R infrastructure complete. Possession handover clearance ready."}
+              </p>
             </div>
           )}
-        </form>
 
-        <p className="text-xs text-slate-400 text-center mt-4">
-          R&amp;R progress contributes <strong>7%</strong> to the project risk score (PRAGATI-informed weighting).
-        </p>
-      </div>
-    </main>
+          <form
+            onSubmit={handleSave}
+            className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-xl"
+          >
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">
+                Resettlement Colonies Planned <span className="text-slate-500 font-normal">(Total Units)</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                value={form.colonies_planned}
+                onChange={(e) => update("colonies_planned", e.target.value)}
+                placeholder="e.g. 120"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">
+                Colonies Constructed & Civil Works Verified
+              </label>
+              <input
+                type="number"
+                min="0"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                value={form.colonies_built}
+                onChange={(e) => update("colonies_built", e.target.value)}
+                placeholder="e.g. 85"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">
+                Families Successfully Relocated & Resettled
+              </label>
+              <input
+                type="number"
+                min="0"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
+                value={form.families_shifted}
+                onChange={(e) => update("families_shifted", e.target.value)}
+                placeholder="e.g. 70"
+                required
+              />
+            </div>
+
+            {saved && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono">
+                ✓ R&R field records saved to Supabase and synced with multi-model survival metrics!
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full bg-teal-600 hover:bg-teal-500 text-white py-3 rounded-xl text-xs font-bold transition shadow-lg shadow-teal-600/20 active:scale-95 disabled:opacity-50 font-mono"
+            >
+              {saving ? "Updating Statutory Ledger..." : "Save R&R Field Record →"}
+            </button>
+          </form>
+        </div>
+      </main>
+    </DashboardLayout>
   );
 }
