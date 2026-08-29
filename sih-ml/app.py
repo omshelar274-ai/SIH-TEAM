@@ -31,7 +31,7 @@ from survival_model import compute_cph_survival
 
 app = FastAPI(
     title="LandGuard AI: Land Acquisition Predictive Intelligence Engine",
-    description="Multi-model survival ensemble & statutory analytics under RFCTLARR Act 2013",
+    description="Predictive risk classification, delay regression, and statutory survival analytics under RFCTLARR Act 2013",
     version="3.0.0",
 )
 
@@ -219,7 +219,7 @@ def health():
     return {
         "status": "active",
         "service": "LandGuard ML Intelligence API v3.0",
-        "architecture": "Literature-Calibrated Breslow Hazard + Scikit-Learn Ensembles",
+        "survival_model": "Literature-Calibrated Breslow Hazard Model",
         "framework_info": FRAMEWORK_INFO or {"framework": "scikit-learn"},
         "features_count": len(FEATURES),
     }

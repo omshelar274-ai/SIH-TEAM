@@ -410,7 +410,7 @@ export default function DashboardPage() {
           {syncingId && (
             <div className="bg-slate-900 text-slate-100 p-5 rounded-2xl border border-slate-800 font-mono text-xs shadow-inner space-y-2">
               <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                <span className="text-indigo-400 font-bold">● GOV_PORTALS_SYNC_STREAM — {district}</span>
+                <span className="text-indigo-400 font-bold">● GOV_PORTALS_SYNC_STREAM (Simulated Demo Sync) — {district}</span>
                 <button onClick={() => setSyncingId(null)} className="text-slate-400 hover:text-white font-semibold">Close</button>
               </div>
               <div className="space-y-1 max-h-[160px] overflow-y-auto">
@@ -439,14 +439,14 @@ export default function DashboardPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                     <div>
                       <span className={`inline-block text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full mb-1 ${source === "ml" ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" : "bg-slate-800 text-slate-400"}`}>
-                        {source === "ml" ? "⚡ ML Model (Random Forest + CPH)" : "Rule-Based Engine"}
+                        {source === "ml" ? "⚡ ML Model (Trained Classifier + Breslow Hazard)" : "Rule-Based Engine"}
                       </span>
                       <h2 className="text-xl font-black text-white">{project.project_name}</h2>
                       <p className="text-xs text-slate-400 font-mono mt-0.5">{project.project_type} · {project.district} · {project.villages_affected}</p>
                     </div>
 
                     {/* Actions Toolbar */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         onClick={() => setSimulatingProject({ project, metrics })}
                         className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-md shadow-indigo-600/20"
@@ -465,13 +465,17 @@ export default function DashboardPage() {
                       >
                         📜 Issue Directive
                       </button>
-                      <button
-                        onClick={() => triggerSync(project.id)}
-                        disabled={syncingId !== null}
-                        className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition disabled:opacity-50"
-                      >
-                        Sync Portals
-                      </button>
+                      <div className="flex flex-col items-end">
+                        <button
+                          onClick={() => triggerSync(project.id)}
+                          disabled={syncingId !== null}
+                          className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                          title="Simulated portal sync (demo data)"
+                        >
+                          Sync Portals
+                        </button>
+                        <span className="text-[9px] text-slate-500 font-mono mt-0.5">Simulated demo sync</span>
+                      </div>
                     </div>
                   </div>
 

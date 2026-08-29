@@ -110,7 +110,7 @@ export default function RiskCard({
         {/* Multi-Model Convergence / Disagreement Diagnostic Strip */}
         <div className="mt-3 px-3 py-2 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="text-sky-400 font-bold">⚖ Multi-Model Telemetry:</span>
+            <span className="text-sky-400 font-bold">⚖ Model Outputs:</span>
             <span className="text-slate-300">
               Classifier: <strong className="text-white">{result.riskLevel}</strong> · Survival Hazard: <strong className="text-sky-300">{result.delayProbabilityPct}%</strong> (90d window)
             </span>

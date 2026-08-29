@@ -131,7 +131,7 @@ export default function LoginPage() {
               </span>
             </h1>
             <p className="mt-3 text-slate-400 text-xs leading-relaxed max-w-sm">
-              Early warning system for infrastructure project delays. Powered by Multi-Model Survival Ensemble ML, PostGIS geofencing spatial analysis, and live government data integrations.
+              Early warning system for infrastructure project delays. Combines a trained risk classifier, delay regressor, and literature-calibrated survival modeling with role-based ground-truth verification.
             </p>
           </div>
 
