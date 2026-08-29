@@ -30,16 +30,24 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
             .eq("id", user.id)
             .maybeSingle();
 
-          const role = (profile?.role || "collector").toLowerCase() as "collector" | "lao" | "patwari";
-          setUserRole(role);
-          if (profile?.full_name) setUserName(profile.full_name);
-          else if (user.email) setUserName(user.email.split("@")[0]);
+          if (profile?.role) {
+            const role = profile.role.toLowerCase() as "collector" | "lao" | "patwari";
+            setUserRole(role);
+            if (profile.full_name) setUserName(profile.full_name);
+            else if (user.email) setUserName(user.email.split("@")[0]);
 
-          if (allowedRoles.includes(role)) {
-            setAuthorized(true);
-            setLoading(false);
-            return;
+            if (allowedRoles.includes(role)) {
+              setAuthorized(true);
+              setLoading(false);
+              return;
+            } else {
+              setAuthorized(false);
+              setLoading(false);
+              return;
+            }
           } else {
+            // Profile missing or role is falsy - do NOT default to collector
+            setUserRole(null);
             setAuthorized(false);
             setLoading(false);
             return;

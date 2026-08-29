@@ -58,23 +58,32 @@ export default function LoginPage() {
 
       if (data?.user) {
         // Query existing linked profile from Supabase
-        const { data: profile } = await supabase
+        const { data: profile, error: profError } = await supabase
           .from("profiles")
           .select("role, full_name, district")
           .eq("id", data.user.id)
           .maybeSingle();
 
-        const role = (profile?.role || "collector").toLowerCase() as "collector" | "lao" | "patwari";
+        if (profError || !profile || !profile.role) {
+          setError("Officer profile record not found in district registry. Please contact the District Administrator.");
+          setLoading(false);
+          return;
+        }
+
+        const role = profile.role.toLowerCase() as "collector" | "lao" | "patwari";
 
         sessionStorage.setItem("active_officer_role", role);
-        sessionStorage.setItem("active_officer_name", profile?.full_name || email.split("@")[0]);
+        sessionStorage.setItem("active_officer_name", profile.full_name || email.split("@")[0]);
 
         if (role === "patwari") {
           router.push("/dashboard/patwari");
         } else if (role === "lao") {
           router.push("/dashboard/lao");
-        } else {
+        } else if (role === "collector") {
           router.push("/dashboard");
+        } else {
+          setError(`Unauthorized role: '${profile.role}'. Access restricted to registered district officers.`);
+          setLoading(false);
         }
       } else {
         setError(signInError?.message || "Invalid officer email or passphrase. Please verify your credentials.");

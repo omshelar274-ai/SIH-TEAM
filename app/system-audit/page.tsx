@@ -1,9 +1,38 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import DashboardLayout from "@/components/DashboardLayout";
 import RoleGuard from "@/components/RoleGuard";
 
 export default function SystemAuditPage() {
+  const [projectCount, setProjectCount] = useState<number | null>(null);
+  const [familyCount, setFamilyCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadLiveCounts() {
+      try {
+        const { count: projCount } = await supabase
+          .from("projects")
+          .select("*", { count: "exact", head: true });
+
+        const { count: famCount } = await supabase
+          .from("families")
+          .select("*", { count: "exact", head: true });
+
+        setProjectCount(projCount ?? 0);
+        setFamilyCount(famCount ?? 0);
+      } catch {
+        // Leave as null if query fails to show honest unavailable state
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadLiveCounts();
+  }, []);
+
   return (
     <RoleGuard allowedRoles={["collector", "lao", "patwari"]}>
       <DashboardLayout>
@@ -27,12 +56,16 @@ export default function SystemAuditPage() {
             <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
               <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Geographic Scope</p>
               <p className="text-xl font-bold text-white mt-1">Nagpur District</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Maharashtra, India (10 Corridors)</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                Maharashtra, India ({loading ? "..." : projectCount !== null ? `${projectCount} Corridors` : "Count Unavailable"})
+              </p>
             </div>
 
             <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
               <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">Ground Parcels</p>
-              <p className="text-xl font-bold text-emerald-400 mt-1">655 Surveyed Families</p>
+              <p className="text-xl font-bold text-emerald-400 mt-1">
+                {loading ? "..." : familyCount !== null ? `${familyCount} Surveyed Families` : "Data Unavailable"}
+              </p>
               <p className="text-[10px] text-slate-400 mt-0.5">Supabase PostgreSQL Database</p>
             </div>
 
