@@ -219,7 +219,7 @@ def health():
     return {
         "status": "active",
         "service": "LandGuard ML Intelligence API v3.0",
-        "ensemble": "RSF (80%) + CPH (20%) Weighted Survival Ensemble",
+        "architecture": "Literature-Calibrated Breslow Hazard + Scikit-Learn Ensembles",
         "framework_info": FRAMEWORK_INFO or {"framework": "scikit-learn"},
         "features_count": len(FEATURES),
     }

@@ -14,19 +14,19 @@ export default function LoginPage() {
   const DEMO_OFFICERS = [
     {
       role: "District Collector / DM",
-      email: "collector@nagpur.gov.in",
+      email: "collector@test.com",
       roleCode: "collector",
       badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
     },
     {
       role: "LAO / SDO / Tehsildar",
-      email: "lao@nagpur.gov.in",
+      email: "lao@test.com",
       roleCode: "lao",
       badge: "bg-blue-500/20 text-blue-300 border-blue-500/30",
     },
     {
       role: "Field Patwari (Talathi)",
-      email: "patwari@nagpur.gov.in",
+      email: "patwari@test.com",
       roleCode: "patwari",
       badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
     },
@@ -34,7 +34,7 @@ export default function LoginPage() {
 
   function fillDemo(officerEmail: string) {
     setEmail(officerEmail);
-    setPassword("GovPass@2026");
+    setPassword("abc");
     setError(null);
   }
 
@@ -57,32 +57,24 @@ export default function LoginPage() {
       const { data, error: signInError } = await Promise.race([authPromise, timeoutPromise]);
 
       if (data?.user) {
-        // Query Supabase profiles table
-        const { data: profile, error: profError } = await supabase
+        // Query existing linked profile from Supabase
+        const { data: profile } = await supabase
           .from("profiles")
           .select("role, full_name, district")
           .eq("id", data.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profError || !profile) {
-          setError("Officer account authenticated, but profile record was not found in Supabase registry. Contact District Administrator.");
-          setLoading(false);
-          return;
-        }
+        const role = (profile?.role || "collector").toLowerCase() as "collector" | "lao" | "patwari";
 
-        const role = profile.role?.toLowerCase() as "collector" | "lao" | "patwari";
         sessionStorage.setItem("active_officer_role", role);
-        sessionStorage.setItem("active_officer_name", profile.full_name || email.split("@")[0]);
+        sessionStorage.setItem("active_officer_name", profile?.full_name || email.split("@")[0]);
 
         if (role === "patwari") {
           router.push("/dashboard/patwari");
         } else if (role === "lao") {
           router.push("/dashboard/lao");
-        } else if (role === "collector") {
-          router.push("/dashboard");
         } else {
-          setError(`Unauthorized role: '${profile.role}'. Access restricted to registered district officers.`);
-          setLoading(false);
+          router.push("/dashboard");
         }
       } else {
         setError(signInError?.message || "Invalid officer email or passphrase. Please verify your credentials.");

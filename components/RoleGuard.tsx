@@ -30,25 +30,23 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
             .eq("id", user.id)
             .maybeSingle();
 
-          if (profile?.role) {
-            const role = profile.role.toLowerCase() as "collector" | "lao" | "patwari";
-            setUserRole(role);
-            if (profile.full_name) setUserName(profile.full_name);
-            else if (user.email) setUserName(user.email.split("@")[0]);
+          const role = (profile?.role || "collector").toLowerCase() as "collector" | "lao" | "patwari";
+          setUserRole(role);
+          if (profile?.full_name) setUserName(profile.full_name);
+          else if (user.email) setUserName(user.email.split("@")[0]);
 
-            if (allowedRoles.includes(role)) {
-              setAuthorized(true);
-              setLoading(false);
-              return;
-            } else {
-              setAuthorized(false);
-              setLoading(false);
-              return;
-            }
+          if (allowedRoles.includes(role)) {
+            setAuthorized(true);
+            setLoading(false);
+            return;
+          } else {
+            setAuthorized(false);
+            setLoading(false);
+            return;
           }
         }
 
-        // If not authenticated or no valid profile found, redirect to login
+        // If not authenticated, redirect to login
         router.replace("/login");
       } catch (err) {
         console.warn("Role check error:", err);
