@@ -476,7 +476,7 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Primary Risk Card */}
-                  <RiskCard projectName={project.project_name} result={result} />
+                  <RiskCard projectName={project.project_name} result={result} metrics={metrics} />
 
                   {/* Expandable Survival & Kaplan-Meier Card */}
                   {expandedSurvivalId === project.id && (

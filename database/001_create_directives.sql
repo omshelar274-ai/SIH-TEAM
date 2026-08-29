@@ -1,4 +1,4 @@
--- Directives Table with Role-Based Row Level Security
+-- Directives Table with Scoped Role-Based Row Level Security
 create table if not exists public.directives (
   id uuid primary key default gen_random_uuid(),
   project_id uuid references public.projects(id) on delete cascade,
@@ -24,15 +24,28 @@ drop policy if exists "Authenticated users can select directives" on public.dire
 drop policy if exists "Authenticated users can insert directives" on public.directives;
 drop policy if exists "Authenticated users can update directives" on public.directives;
 drop policy if exists "Allow all authenticated operations" on public.directives;
+drop policy if exists "Scoped directive select policy" on public.directives;
+drop policy if exists "Scoped directive insert policy" on public.directives;
+drop policy if exists "Scoped directive update policy" on public.directives;
 
--- 1. Read: Any authenticated officer can view active directives
-create policy "Authenticated users can select directives"
+-- 1. Scoped Read: Collectors see all; LAO/Patwari see directives assigned to their role
+create policy "Scoped directive select policy"
   on public.directives for select
   to authenticated
-  using (true);
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+      and (
+        profiles.role = 'collector'
+        or (profiles.role = 'lao' and directives.assigned_to in ('LAO / Tehsildar', 'lao'))
+        or (profiles.role = 'patwari' and directives.assigned_to in ('Patwari', 'patwari'))
+      )
+    )
+  );
 
--- 2. Insert: District Collectors can dispatch directives
-create policy "Authenticated users can insert directives"
+-- 2. Insert: Only District Collectors can dispatch executive directives
+create policy "Scoped directive insert policy"
   on public.directives for insert
   to authenticated
   with check (
@@ -43,21 +56,29 @@ create policy "Authenticated users can insert directives"
     )
   );
 
--- 3. Update: Assigned officers (LAO, Patwari) or Collector can update status and resolution proof
-create policy "Authenticated users can update directives"
+-- 3. Update: Collector can update any; Assignees can only update directives assigned to them
+create policy "Scoped directive update policy"
   on public.directives for update
   to authenticated
   using (
     exists (
       select 1 from public.profiles
       where profiles.id = auth.uid()
-      and profiles.role in ('collector', 'lao', 'patwari')
+      and (
+        profiles.role = 'collector'
+        or (profiles.role = 'lao' and directives.assigned_to in ('LAO / Tehsildar', 'lao'))
+        or (profiles.role = 'patwari' and directives.assigned_to in ('Patwari', 'patwari'))
+      )
     )
   )
   with check (
     exists (
       select 1 from public.profiles
       where profiles.id = auth.uid()
-      and profiles.role in ('collector', 'lao', 'patwari')
+      and (
+        profiles.role = 'collector'
+        or (profiles.role = 'lao' and directives.assigned_to in ('LAO / Tehsildar', 'lao'))
+        or (profiles.role = 'patwari' and directives.assigned_to in ('Patwari', 'patwari'))
+      )
     )
   );

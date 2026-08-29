@@ -1,4 +1,4 @@
-import { RiskResult } from "@/lib/riskScore";
+import { RiskResult, ProjectMetrics } from "@/lib/riskScore";
 
 const levelConfig: Record<
   RiskResult["riskLevel"],
@@ -43,11 +43,39 @@ const urgencyConfig: Record<string, { bg: string; label: string }> = {
 export default function RiskCard({
   projectName,
   result,
+  metrics,
 }: {
   projectName: string;
   result: RiskResult;
+  metrics?: ProjectMetrics;
 }) {
   const cfg = levelConfig[result.riskLevel];
+  const dataTier = metrics?.dataQualityTier || "VERIFIED";
+
+  const tierBadgeConfig: Record<string, { label: string; style: string; icon: string }> = {
+    VERIFIED: {
+      label: `Verified Ground Survey (${metrics?.verifiedFamiliesCount ?? 0} Families Audited)`,
+      style: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+      icon: "✓",
+    },
+    PARTIALLY_VERIFIED: {
+      label: `Partially Verified Survey (${metrics?.pendingFamiliesCount ?? 0} Pending LAO Sign-off)`,
+      style: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+      icon: "⏳",
+    },
+    BASELINE_ESTIMATE: {
+      label: "Statutory Baseline Model (0 Ground Surveys Filed)",
+      style: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+      icon: "📊",
+    },
+    PENDING_AUDIT: {
+      label: "Pending Field Audit",
+      style: "bg-slate-500/20 text-slate-300 border-slate-500/30",
+      icon: "📋",
+    },
+  };
+
+  const currentTier = tierBadgeConfig[dataTier] || tierBadgeConfig.VERIFIED;
 
   return (
     <div className={`rounded-2xl border ${cfg.border} bg-slate-900 shadow-xl overflow-hidden animate-fade-in`}>
@@ -55,9 +83,12 @@ export default function RiskCard({
       <div className={`${cfg.header} px-6 py-5 text-white border-b border-slate-800`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${cfg.badge}`}>
                 {cfg.icon} {result.riskLevel} RISK CORRIDOR
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${currentTier.style}`}>
+                {currentTier.icon} {currentTier.label}
               </span>
             </div>
             <h2 className="font-extrabold text-xl leading-snug truncate text-white">{projectName}</h2>

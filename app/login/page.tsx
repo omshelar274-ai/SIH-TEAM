@@ -85,25 +85,8 @@ export default function LoginPage() {
           setLoading(false);
         }
       } else {
-        // Fallback test accounts check
-        const cleanEmail = email.toLowerCase().trim();
-        const validTestUsers: Record<string, "collector" | "lao" | "patwari"> = {
-          "collector@test.com": "collector",
-          "lao@test.com": "lao",
-          "patwari@test.com": "patwari",
-        };
-
-        if (validTestUsers[cleanEmail] && (password === "password123" || password === "GovPass@2026")) {
-          const role = validTestUsers[cleanEmail];
-          sessionStorage.setItem("active_officer_role", role);
-          sessionStorage.setItem("active_officer_name", cleanEmail.split("@")[0].toUpperCase());
-          if (role === "patwari") router.push("/dashboard/patwari");
-          else if (role === "lao") router.push("/dashboard/lao");
-          else router.push("/dashboard");
-        } else {
-          setError(signInError?.message || "Invalid officer email or passphrase. Please verify your credentials.");
-          setLoading(false);
-        }
+        setError(signInError?.message || "Invalid officer email or passphrase. Please verify your credentials.");
+        setLoading(false);
       }
     } catch (err: any) {
       setError(err?.message || "Authentication service error. Please try again.");

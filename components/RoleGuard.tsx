@@ -38,35 +38,17 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
 
             if (allowedRoles.includes(role)) {
               setAuthorized(true);
-              sessionStorage.setItem("active_officer_role", role);
-              sessionStorage.setItem("active_officer_name", profile.full_name || user.email || "Officer");
+              setLoading(false);
+              return;
+            } else {
+              setAuthorized(false);
               setLoading(false);
               return;
             }
           }
         }
 
-        // 2. Check Active Session Storage (supports Demo Pills & active sessions)
-        const sessionRole = (sessionStorage.getItem("active_officer_role") || "").toLowerCase() as "collector" | "lao" | "patwari";
-        const sessionName = sessionStorage.getItem("active_officer_name") || "Officer";
-
-        if (sessionRole && allowedRoles.includes(sessionRole)) {
-          setUserRole(sessionRole);
-          setUserName(sessionName);
-          setAuthorized(true);
-          setLoading(false);
-          return;
-        }
-
-        if (sessionRole && !allowedRoles.includes(sessionRole)) {
-          setUserRole(sessionRole);
-          setUserName(sessionName);
-          setAuthorized(false);
-          setLoading(false);
-          return;
-        }
-
-        // If no user and no session, redirect to login
+        // If not authenticated or no valid profile found, redirect to login
         router.replace("/login");
       } catch (err) {
         console.warn("Role check error:", err);
