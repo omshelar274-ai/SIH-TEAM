@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { calculateRisk, ProjectMetrics, DelayDriver, RiskResult } from "@/lib/riskScore";
 
+export const dynamic = "force-dynamic";
+
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
 
 interface RequestBody {
