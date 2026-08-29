@@ -177,7 +177,7 @@ export async function POST(req: NextRequest) {
           variable: h.variable,
           coefficient: h.beta ?? 0.5,
           hazardRatio: Math.round(Math.exp(h.beta ?? 0.5) * 100) / 100,
-          pValue: 0.01,
+          statutoryBasis: h.statutory_basis || "RFCTLARR Statutory Benchmark",
           active: h.active ?? false,
         }));
 

@@ -77,15 +77,19 @@ export default function RiskCard({
 
   const currentTier = tierBadgeConfig[dataTier] || tierBadgeConfig.VERIFIED;
 
+  // Multi-Model Concordance Diagnostic
+  const survivalTier = result.delayProbabilityPct >= 75 ? "CRITICAL" : result.delayProbabilityPct >= 54 ? "HIGH" : result.delayProbabilityPct >= 34 ? "MODERATE" : "LOW";
+  const isDivergent = result.riskLevel !== survivalTier;
+
   return (
     <div className={`rounded-2xl border ${cfg.border} bg-slate-900 shadow-xl overflow-hidden animate-fade-in`}>
       {/* Header bar */}
       <div className={`${cfg.header} px-6 py-5 text-white border-b border-slate-800`}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${cfg.badge}`}>
-                {cfg.icon} {result.riskLevel} RISK CORRIDOR
+                {cfg.icon} Classifier: {result.riskLevel}
               </span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider border ${currentTier.style}`}>
                 {currentTier.icon} {currentTier.label}
@@ -94,23 +98,42 @@ export default function RiskCard({
             <h2 className="font-extrabold text-xl leading-snug truncate text-white">{projectName}</h2>
           </div>
 
-          {/* Score gauge */}
+          {/* 90-Day Delay Probability Gauge */}
           <div className="shrink-0 text-right">
-            <div className={`w-16 h-16 rounded-full ring-4 ${cfg.ring} bg-white/10 flex items-center justify-center`}>
-              <span className="text-2xl font-black leading-none text-white">{result.riskScore}</span>
+            <div className={`w-24 h-16 rounded-2xl ring-2 ${cfg.ring} bg-slate-950/80 px-2 py-1.5 flex flex-col items-center justify-center`}>
+              <span className="text-xl font-black leading-none text-white">{result.delayProbabilityPct}%</span>
+              <p className="text-slate-400 text-[9px] font-mono mt-1 text-center leading-tight">90d Delay Prob</p>
             </div>
-            <p className="text-slate-400 text-[10px] font-mono mt-1">out of 100</p>
           </div>
         </div>
 
+        {/* Multi-Model Convergence / Disagreement Diagnostic Strip */}
+        <div className="mt-3 px-3 py-2 rounded-xl bg-slate-950/70 border border-slate-800 text-[11px] font-mono flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sky-400 font-bold">⚖ Model Telemetry:</span>
+            <span className="text-slate-300">
+              Trained Classifier: <strong className="text-white">{result.riskLevel}</strong> · Survival Model: <strong className="text-sky-300">{result.delayProbabilityPct}%</strong> (90-day hazard)
+            </span>
+          </div>
+          {isDivergent ? (
+            <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full shrink-0 font-bold">
+              ⚡ Multi-Horizon Disparity ({result.riskLevel} vs {survivalTier} tier)
+            </span>
+          ) : (
+            <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0 font-bold">
+              ✓ Multi-Model Consensus
+            </span>
+          )}
+        </div>
+
         {/* Metrics strip */}
-        <div className="mt-4 grid grid-cols-3 gap-4 pt-3 border-t border-white/10 font-mono text-xs">
+        <div className="mt-3 grid grid-cols-3 gap-4 pt-3 border-t border-white/10 font-mono text-xs">
           <div>
-            <p className="text-slate-400 text-[10px] uppercase tracking-wide">Delay Probability (90d)</p>
-            <p className="font-black text-sm text-white mt-0.5">{result.delayProbabilityPct}%</p>
+            <p className="text-slate-400 text-[10px] uppercase tracking-wide">Time-to-Event Hazard</p>
+            <p className="font-black text-sm text-sky-400 mt-0.5">{result.cphHazardRatio}x Baseline</p>
           </div>
           <div className="border-x border-white/10 px-3">
-            <p className="text-slate-400 text-[10px] uppercase tracking-wide">Predicted Delay</p>
+            <p className="text-slate-400 text-[10px] uppercase tracking-wide">Predicted Delay (Regressor)</p>
             <p className="font-black text-sm text-white mt-0.5">{result.predictedDelayMonths.min}–{result.predictedDelayMonths.max} Mo</p>
           </div>
           <div>
