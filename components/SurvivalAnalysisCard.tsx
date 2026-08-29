@@ -35,7 +35,7 @@ export default function SurvivalAnalysisCard({
               ● Time-to-Event Survival Analysis
             </span>
             <span className="bg-gradient-to-r from-sky-500/20 to-indigo-500/20 text-sky-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-sky-500/30">
-              Multi-Model Ensemble (RSF 80% + CPH 20%)
+              Breslow Cumulative Hazard Estimator
             </span>
             <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-500/20">
               C-Index: 0.89
@@ -45,7 +45,7 @@ export default function SurvivalAnalysisCard({
         </div>
         <div className="flex items-center gap-4 text-right">
           <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-mono block">Ensemble Hazard Ratio</span>
+            <span className="text-[10px] text-slate-400 font-mono block">Composite Hazard Ratio</span>
             <p className="text-base font-black text-sky-400">{result.cphHazardRatio}x</p>
           </div>
         </div>
@@ -57,7 +57,7 @@ export default function SurvivalAnalysisCard({
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
             Multi-Horizon Cumulative Delay Probability Forecast
           </p>
-          <span className="text-[10px] font-mono text-slate-500">Breslow Hazard Baseline</span>
+          <span className="text-[10px] font-mono text-slate-500">S(t) = S₀(t)^HR</span>
         </div>
         <div className="grid grid-cols-4 gap-2 text-center font-mono">
           <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
@@ -90,8 +90,8 @@ export default function SurvivalAnalysisCard({
       {/* SVG Kaplan-Meier Curve */}
       <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
         <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
-          <span className="font-bold text-slate-300">Kaplan-Meier Project Completion Survival Curve S(t)</span>
-          <span>S(t) = S₀(t)^HR · Non-Parametric RSF</span>
+          <span className="font-bold text-slate-300">Project Completion Survival Curve S(t)</span>
+          <span>Right-Censored Baseline: S₀(t)</span>
         </div>
         
         <div className="flex justify-center overflow-x-auto">
@@ -142,37 +142,33 @@ export default function SurvivalAnalysisCard({
         </div>
 
         <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono pt-1">
-          <span>Ishwaran et al. (2008) RSF + Cox (1972) CPH</span>
-          <span>Right-Censored Estimator</span>
+          <span>Non-Parametric Baseline Hazard Strata</span>
+          <span>Breslow Formulation (1972)</span>
         </div>
       </div>
 
-      {/* Model Consensus Cross-Validation Breakdown */}
-      {result.modelConsensus && (
-        <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-          <div className="flex justify-between items-center text-[10px] font-mono mb-2">
-            <span className="text-slate-400 font-bold uppercase">● Tri-Model Ensemble Consensus</span>
-            <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-              result.modelConsensus.disagreementLevel === "LOW"
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-            }`}>
-              {result.modelConsensus.disagreementLevel} DISAGREEMENT
-            </span>
+      {/* Statutory Hazard Covariate Table */}
+      {result.cphHazardTable && (
+        <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 font-mono text-xs">
+          <div className="flex justify-between items-center text-[10px] text-slate-400">
+            <span className="font-bold text-slate-300 uppercase">● Statutory Hazard Covariates (e^β)</span>
+            <span>RFCTLARR 2013 Risk Multipliers</span>
           </div>
-          <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
-            <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 block">Random Survival Forest</span>
-              <span className="font-bold text-sky-400">{result.modelConsensus.randomForest} / 100</span>
-            </div>
-            <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 block">Cox Proportional Hazards</span>
-              <span className="font-bold text-indigo-400">{result.modelConsensus.coxSurvival} / 100</span>
-            </div>
-            <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-              <span className="text-[10px] text-slate-500 block">Logistic Milestone Head</span>
-              <span className="font-bold text-purple-400">{result.modelConsensus.logistic} / 100</span>
-            </div>
+          <div className="space-y-1.5 pt-1">
+            {result.cphHazardTable.map((cov, idx) => (
+              <div key={idx} className="flex justify-between items-center text-[11px] bg-slate-900/60 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${cov.active ? "bg-amber-400 animate-pulse" : "bg-slate-600"}`} />
+                  <span className={cov.active ? "text-slate-200 font-medium" : "text-slate-400"}>{cov.variable}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-slate-500 text-[10px]">β = {cov.coefficient}</span>
+                  <span className={`font-bold px-1.5 py-0.5 rounded text-[10px] ${cov.active ? "bg-amber-500/20 text-amber-300 border border-amber-500/30" : "bg-slate-800 text-slate-400"}`}>
+                    {cov.hazardRatio}x HR
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
