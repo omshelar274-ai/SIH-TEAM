@@ -81,21 +81,32 @@ export async function fetchProjectMetrics(
     Math.round((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30))
   );
 
-  // Compensation paid percentage based on real ground survey rows
+  // Data Quality Tiering & Ground Audit Telemetry
+  let dataQualityTier: "VERIFIED" | "PARTIALLY_VERIFIED" | "PENDING_AUDIT" | "BASELINE_ESTIMATE";
   let compensationPaidPct = 0;
-  if (totalFamilies > 0) {
-    compensationPaidPct = (paidCount / totalFamilies) * 100;
-  } else {
-    // Dynamic fallback calibrated to project status & timeline
-    compensationPaidPct = project.status === "Completed" ? 95 : Math.min(80, Math.max(15, (monthsElapsed / monthsTotal) * 65));
-  }
-
-  // Possession refusal percentage
   let possessionRefusingPct = 0;
-  if (totalFamilies > 0) {
+  let laoBacklogRatio = 1.5;
+  let documentRejectionRate = 0.05;
+
+  if (totalFamilies > 10) {
+    dataQualityTier = "VERIFIED";
+    compensationPaidPct = (paidCount / totalFamilies) * 100;
     possessionRefusingPct = (refusingCount / totalFamilies) * 100;
+    laoBacklogRatio = Math.min(5.5, Math.max(0.5, (unverifiedCount / totalFamilies) * 3.5 + 1.2));
+    documentRejectionRate = rejectedCount / totalFamilies;
+  } else if (totalFamilies > 0) {
+    dataQualityTier = unverifiedCount > 0 ? "PARTIALLY_VERIFIED" : "VERIFIED";
+    compensationPaidPct = (paidCount / totalFamilies) * 100;
+    possessionRefusingPct = (refusingCount / totalFamilies) * 100;
+    laoBacklogRatio = Math.min(5.5, Math.max(0.5, (unverifiedCount / totalFamilies) * 3.5 + 1.2));
+    documentRejectionRate = rejectedCount / totalFamilies;
   } else {
-    possessionRefusingPct = (project.st_families > 15 || project.project_name.toLowerCase().includes("tribal")) ? 28 : 8;
+    dataQualityTier = "BASELINE_ESTIMATE";
+    // Transparent statutory baseline estimate from project timeline & land categories
+    compensationPaidPct = project.status === "Completed" ? 100 : Math.min(80, Math.max(0, (monthsElapsed / monthsTotal) * 50));
+    possessionRefusingPct = 0;
+    laoBacklogRatio = project.total_land_area_hectares > 500 ? 2.5 : 1.5;
+    documentRejectionRate = 0.05;
   }
 
   const coloniesPlanned = rehab?.colonies_planned ?? Math.max(1, Math.round(project.est_families_affected / 40));
@@ -109,15 +120,6 @@ export async function fetchProjectMetrics(
           Math.round((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
         )
       : 0;
-
-  // Real-world dynamic backlog ratio & document rejection from ground stats
-  const laoBacklogRatio = totalFamilies > 0
-    ? Math.min(5.5, Math.max(0.5, (unverifiedCount / totalFamilies) * 3.5 + 1.2))
-    : (project.total_land_area_hectares > 1000 ? 3.8 : 1.6);
-
-  const documentRejectionRate = totalFamilies > 0
-    ? (rejectedCount / totalFamilies)
-    : (project.st_families > 20 ? 0.22 : 0.06);
 
   const isScheduleVTribal = project.project_name.toLowerCase().includes("tribal") || project.st_families > 20 ? 1 : 0;
   const isForestLand = project.forest_clearance === "Yes" ? 1 : 0;
@@ -141,5 +143,10 @@ export async function fetchProjectMetrics(
     isScheduleVTribal,
     isForestLand,
     isUrbanCommercial,
+    dataQualityTier,
+    verifiedFamiliesCount: paidCount,
+    pendingFamiliesCount: unverifiedCount,
+    rejectedFamiliesCount: rejectedCount,
+    totalFamiliesCount: totalFamilies,
   };
 }

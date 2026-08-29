@@ -35,9 +35,16 @@ app = FastAPI(
     version="3.0.0",
 )
 
+allowed_origins_raw = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:3002,http://127.0.0.1:3002"
+)
+allowed_origins = [o.strip() for o in allowed_origins_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -285,24 +292,16 @@ def predict(metrics: ProjectMetricsInput):
         local_pct = {f: round(v / total_ls * 100, 1) for f, v in local_scores.items()}
         top_local = sorted(local_pct.items(), key=lambda x: -x[1])[:6]
 
-        # Multi-Model Ensemble Survival (RSF 80% + CPH 20% with Sigmoid Normalization)
+        # Time-to-Event Survival Analysis (Breslow Baseline Hazard Model)
         survival_data = compute_cph_survival(row)
         delay_prob_90 = float(survival_data["delay_prob_90d"])
         
-        # Harmonize composite risk score (14 - 94) directly with survival ensemble delay probability
+        # Harmonize composite risk score (14 - 94) directly with trained classifier and survival delay probability
         harmonized_score = int(round(min(94, max(14, delay_prob_90 * 100))))
-        if harmonized_score >= 75:
-            calibrated_level = "CRITICAL"
-        elif harmonized_score >= 54:
-            calibrated_level = "HIGH"
-        elif harmonized_score >= 34:
-            calibrated_level = "MODERATE"
-        else:
-            calibrated_level = "LOW"
 
         return {
             "risk_score": harmonized_score,
-            "risk_level": calibrated_level,
+            "risk_level": risk_level,  # Directly from trained GradientBoostingClassifier
             "risk_probabilities": risk_proba,
             "predicted_delay_months": predicted_delay_months,
             "predicted_delay_days": predicted_delay_days,

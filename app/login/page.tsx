@@ -46,57 +46,67 @@ export default function LoginPage() {
     try {
       // 1. Attempt Supabase Auth with timeout protection
       const authPromise = supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
       const timeoutPromise = new Promise<{ data: any; error: any }>((resolve) =>
-        setTimeout(() => resolve({ data: { user: null }, error: { message: "timeout" } }), 3500)
+        setTimeout(() => resolve({ data: { user: null }, error: { message: "Network timeout connecting to authentication server." } }), 4000)
       );
 
       const { data, error: signInError } = await Promise.race([authPromise, timeoutPromise]);
 
-      let targetRole: "collector" | "lao" | "patwari" = "collector";
-
       if (data?.user) {
         // Query Supabase profiles table
-        const { data: profile } = await supabase
+        const { data: profile, error: profError } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, full_name, district")
           .eq("id", data.user.id)
           .single();
 
-        if (profile?.role === "patwari") targetRole = "patwari";
-        else if (profile?.role === "lao") targetRole = "lao";
-        else targetRole = "collector";
-      } else {
-        // Fallback demo officer email resolution
-        const cleanEmail = email.toLowerCase();
-        if (cleanEmail.includes("patwari") || cleanEmail.includes("talathi")) {
-          targetRole = "patwari";
-        } else if (cleanEmail.includes("lao") || cleanEmail.includes("tehsildar") || cleanEmail.includes("sdo")) {
-          targetRole = "lao";
+        if (profError || !profile) {
+          setError("Officer account authenticated, but profile record was not found in Supabase registry. Contact District Administrator.");
+          setLoading(false);
+          return;
+        }
+
+        const role = profile.role?.toLowerCase() as "collector" | "lao" | "patwari";
+        sessionStorage.setItem("active_officer_role", role);
+        sessionStorage.setItem("active_officer_name", profile.full_name || email.split("@")[0]);
+
+        if (role === "patwari") {
+          router.push("/dashboard/patwari");
+        } else if (role === "lao") {
+          router.push("/dashboard/lao");
+        } else if (role === "collector") {
+          router.push("/dashboard");
         } else {
-          targetRole = "collector";
+          setError(`Unauthorized role: '${profile.role}'. Access restricted to registered district officers.`);
+          setLoading(false);
+        }
+      } else {
+        // Fallback test accounts check
+        const cleanEmail = email.toLowerCase().trim();
+        const validTestUsers: Record<string, "collector" | "lao" | "patwari"> = {
+          "collector@test.com": "collector",
+          "lao@test.com": "lao",
+          "patwari@test.com": "patwari",
+        };
+
+        if (validTestUsers[cleanEmail] && (password === "password123" || password === "GovPass@2026")) {
+          const role = validTestUsers[cleanEmail];
+          sessionStorage.setItem("active_officer_role", role);
+          sessionStorage.setItem("active_officer_name", cleanEmail.split("@")[0].toUpperCase());
+          if (role === "patwari") router.push("/dashboard/patwari");
+          else if (role === "lao") router.push("/dashboard/lao");
+          else router.push("/dashboard");
+        } else {
+          setError(signInError?.message || "Invalid officer email or passphrase. Please verify your credentials.");
+          setLoading(false);
         }
       }
-
-      // Route to destination workspace
-      if (targetRole === "patwari") {
-        router.push("/dashboard/patwari");
-      } else if (targetRole === "lao") {
-        router.push("/dashboard/lao");
-      } else {
-        router.push("/dashboard");
-      }
     } catch (err: any) {
-      console.warn("Auth exception handled:", err);
-      // Even on offline/exception, resolve via email keyword
-      const clean = email.toLowerCase();
-      if (clean.includes("patwari")) router.push("/dashboard/patwari");
-      else if (clean.includes("lao")) router.push("/dashboard/lao");
-      else router.push("/dashboard");
-    } finally {
+      setError(err?.message || "Authentication service error. Please try again.");
       setLoading(false);
     }
   }

@@ -56,11 +56,19 @@ export default function Sidebar() {
     }
     loadUser();
 
-    try {
-      const saved = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-      const active = saved.filter((d: any) => d.status !== "RESOLVED").length;
-      setPendingDirectivesCount(active);
-    } catch {}
+    async function loadDirectivesCount() {
+      try {
+        const { data: dbDirs } = await supabase
+          .from("directives")
+          .select("id, status")
+          .neq("status", "RESOLVED");
+
+        if (dbDirs) {
+          setPendingDirectivesCount(dbDirs.length);
+        }
+      } catch {}
+    }
+    loadDirectivesCount();
   }, [pathname]);
 
   async function handleLogout() {

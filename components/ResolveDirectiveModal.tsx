@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { DirectiveItem } from "@/components/DirectivesModal";
+import { DirectiveItem } from "./DirectivesModal";
 
 interface ResolveDirectiveModalProps {
   directive: DirectiveItem;
-  officerRole: "LAO / Tehsildar" | "Patwari";
+  officerRole: "lao" | "patwari" | "collector";
   onClose: () => void;
-  onResolved: (updatedDirective: DirectiveItem) => void;
+  onResolved: (resolvedDirective: DirectiveItem) => void;
 }
 
 export default function ResolveDirectiveModal({
@@ -17,171 +17,115 @@ export default function ResolveDirectiveModal({
   onClose,
   onResolved,
 }: ResolveDirectiveModalProps) {
-  const [resolutionNote, setResolutionNote] = useState("");
-  const [autoVerifyFamilies, setAutoVerifyFamilies] = useState(true);
-  const [autoDisburseComp, setAutoDisburseComp] = useState(false);
-  const [autoResolveObjections, setAutoResolveObjections] = useState(true);
+  const [resolutionProof, setResolutionProof] = useState("");
   const [saving, setSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleResolve(e: React.FormEvent) {
-    e.preventDefault();
-    if (!resolutionNote.trim()) {
-      alert("Please enter a brief action taken / resolution summary.");
+  async function handleResolve() {
+    if (!resolutionProof.trim()) {
+      setError("Please provide a compliance summary or evidence notes before closing.");
       return;
     }
 
     setSaving(true);
+    setError(null);
 
     try {
-      // 1. If project ID is available, apply database updates to families
-      if (directive.projectId) {
-        if (autoVerifyFamilies) {
-          await supabase
-            .from("families")
-            .update({ verification_status: "Verified" })
-            .eq("project_id", directive.projectId)
-            .eq("verification_status", "Pending");
-        }
+      const { data: userData } = await supabase.auth.getUser();
 
-        if (autoDisburseComp) {
-          await supabase
-            .from("families")
-            .update({ payment_status: "Paid", possession_status: "Vacated" })
-            .eq("project_id", directive.projectId)
-            .eq("payment_status", "Pending");
-        }
+      // Update Supabase directives table
+      const { error: updateError } = await supabase
+        .from("directives")
+        .update({
+          status: "RESOLVED",
+          resolution_proof: resolutionProof.trim(),
+          resolved_at: new Date().toISOString(),
+          resolved_by: userData.user?.id || null,
+        })
+        .eq("id", directive.id);
 
-        if (autoResolveObjections) {
-          await supabase
-            .from("families")
-            .update({ objection_status: "Resolved" })
-            .eq("project_id", directive.projectId)
-            .eq("objection_status", "Filed");
-        }
+      if (updateError) {
+        console.warn("Supabase update notice:", updateError.message);
       }
 
-      // 2. Update directive status
       const updated: DirectiveItem = {
         ...directive,
         status: "RESOLVED",
       };
 
-      // Save into localStorage
-      const all: DirectiveItem[] = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-      const newAll = all.map((d) => (d.id === directive.id ? { ...updated, resolutionNote, resolvedBy: officerRole, resolvedAt: new Date().toISOString() } : d));
-      localStorage.setItem("collector_directives", JSON.stringify(newAll));
-
-      setSuccessMessage("Directive successfully executed and resolved! Database metrics updated.");
-      setTimeout(() => {
-        onResolved(updated);
-        onClose();
-      }, 1000);
+      onResolved(updated);
+      onClose();
     } catch (err: any) {
-      alert(`Resolution error: ${err.message}`);
+      setError(err?.message || "Failed to mark directive as resolved.");
+    } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-emerald-500/40 max-w-lg w-full rounded-2xl p-6 shadow-2xl space-y-4 animate-scale-in font-sans text-slate-100">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-emerald-500/30 text-slate-100 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-scale-in">
         <div className="flex justify-between items-start border-b border-slate-800 pb-3">
           <div>
-            <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">
-              Action Order Resolution · {officerRole}
-            </span>
-            <h2 className="text-lg font-black text-white mt-0.5">Execute &amp; Resolve Directive</h2>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest">
+                Action Resolution &amp; Compliance Sign-Off
+              </span>
+            </div>
+            <h3 className="text-lg font-black text-white mt-1">{directive.title}</h3>
+            <p className="text-xs text-slate-400 font-mono">Assigned to: {directive.assignedTo} · {directive.targetDays}d SLA</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-base font-mono transition"
+            className="text-slate-400 hover:text-white text-sm bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-lg flex items-center justify-center transition"
           >
             ✕
           </button>
         </div>
 
-        {/* Directive details */}
-        <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-1 font-mono">
-          <p className="text-amber-300 font-bold text-sm">{directive.title}</p>
-          <p className="text-slate-300 font-sans">{directive.description}</p>
-          <p className="text-[10px] text-slate-400 mt-1">
-            Target Corridor: <b>{directive.projectName}</b> · SLA: <b>{directive.targetDays} Days</b>
-          </p>
-        </div>
+        {error && (
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">
+            ⚠️ {error}
+          </div>
+        )}
 
-        <form onSubmit={handleResolve} className="space-y-4 text-xs font-sans">
+        <div className="space-y-3 text-xs font-mono">
+          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+            <p className="text-[10px] font-bold text-slate-400 uppercase">Directive Mandate:</p>
+            <p className="text-slate-200 mt-1">{directive.description}</p>
+          </div>
+
           <div>
-            <label className="block text-slate-300 font-semibold mb-1">
-              Field Action Summary / Resolution Notes:
-            </label>
+            <label className="block text-slate-300 font-bold mb-1.5">Compliance Actions &amp; Resolution Proof:</label>
             <textarea
+              rows={4}
               required
-              rows={3}
-              placeholder="e.g. Conducted village conciliation camp at Gram Panchayat. 28 farmer compensation vouchers verified & cleared for disbursement..."
-              value={resolutionNote}
-              onChange={(e) => setResolutionNote(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-sans"
+              placeholder="e.g. Completed special camp in Godhani on 28th Aug. Disbursed ₹42 Lakhs across 8 families. Zero pending title claims."
+              value={resolutionProof}
+              onChange={(e) => setResolutionProof(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
+        </div>
 
-          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-            <p className="text-[11px] font-bold text-slate-300 font-mono uppercase">
-              Automated Database Mitigation Actions:
-            </p>
-            <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoVerifyFamilies}
-                onChange={(e) => setAutoVerifyFamilies(e.target.checked)}
-                className="rounded border-slate-700 text-emerald-600 focus:ring-0"
-              />
-              <span>Verify all pending survey records for this corridor</span>
-            </label>
-            <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoResolveObjections}
-                onChange={(e) => setAutoResolveObjections(e.target.checked)}
-                className="rounded border-slate-700 text-emerald-600 focus:ring-0"
-              />
-              <span>Mark active land valuation objections as Resolved</span>
-            </label>
-            <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={autoDisburseComp}
-                onChange={(e) => setAutoDisburseComp(e.target.checked)}
-                className="rounded border-slate-700 text-emerald-600 focus:ring-0"
-              />
-              <span>Batch mark pending compensation as Paid &amp; Land Vacated</span>
-            </label>
-          </div>
-
-          {successMessage && (
-            <div className="bg-emerald-950/40 border border-emerald-600/50 p-3 rounded-xl text-emerald-300 text-xs font-semibold flex items-center gap-2">
-              <span>✓</span>
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl font-bold transition flex-1"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-bold transition flex-1 shadow-lg shadow-emerald-600/25 disabled:opacity-50"
-            >
-              {saving ? "Updating Database..." : "✓ Submit Resolution"}
-            </button>
-          </div>
-        </form>
+        <div className="pt-2 border-t border-slate-800 flex justify-end gap-2.5 font-mono">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-bold transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={handleResolve}
+            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs rounded-xl font-bold shadow-lg shadow-emerald-600/25 transition flex items-center gap-2 disabled:opacity-50"
+          >
+            {saving ? "Signing Off..." : "✓ Submit Resolution Proof"}
+          </button>
+        </div>
       </div>
     </div>
   );

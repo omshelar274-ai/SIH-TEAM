@@ -7,6 +7,7 @@ import { ProjectRecord } from "@/lib/projectMetrics";
 import { DirectiveItem } from "@/components/DirectivesModal";
 import StatutoryTimeline from "@/components/StatutoryTimeline";
 import DashboardLayout from "@/components/DashboardLayout";
+import RoleGuard from "@/components/RoleGuard";
 import ResolveDirectiveModal from "@/components/ResolveDirectiveModal";
 
 interface ProjectVerificationCount {
@@ -24,20 +25,44 @@ export default function LAODashboardPage() {
   const [expandedTimelineId, setExpandedTimelineId] = useState<string | null>(null);
   const [resolvingDirective, setResolvingDirective] = useState<DirectiveItem | null>(null);
 
+  async function loadDirectives() {
+    try {
+      const { data: dbDirs } = await supabase
+        .from("directives")
+        .select("id, project_id, directive_type, title, description, target_days, assigned_to, status, created_at")
+        .order("created_at", { ascending: false });
+
+      if (dbDirs) {
+        setDirectives(
+          dbDirs.map((d: any) => ({
+            id: d.id,
+            projectId: d.project_id,
+            directiveType: d.directive_type,
+            title: d.title,
+            description: d.description,
+            targetDays: d.target_days,
+            assignedTo: d.assigned_to,
+            status: d.status,
+            createdAt: d.created_at,
+          }))
+        );
+      }
+    } catch {}
+  }
+
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-    setDirectives(saved);
+    loadDirectives();
   }, []);
 
-  function handleUpdateDirectiveStatus(id: string, newStatus: DirectiveItem["status"]) {
-    const updated = directives.map((d) => (d.id === id ? { ...d, status: newStatus } : d));
-    setDirectives(updated);
-    localStorage.setItem("collector_directives", JSON.stringify(updated));
+  async function handleUpdateDirectiveStatus(id: string, newStatus: DirectiveItem["status"]) {
+    try {
+      await supabase.from("directives").update({ status: newStatus, updated_at: new Date().toISOString() }).eq("id", id);
+      setDirectives((prev) => prev.map((d) => (d.id === id ? { ...d, status: newStatus } : d)));
+    } catch {}
   }
 
   function handleDirectiveResolved(updated: DirectiveItem) {
-    const all = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-    setDirectives(all);
+    setDirectives((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
     load();
   }
 
@@ -106,7 +131,8 @@ export default function LAODashboardPage() {
   const pendingDirectives = directives.filter((d) => d.status !== "RESOLVED");
 
   return (
-    <DashboardLayout>
+    <RoleGuard allowedRoles={["lao", "collector"]}>
+      <DashboardLayout>
       <main className="py-8 px-6 font-sans text-slate-100 min-h-screen">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header Strip */}
@@ -310,12 +336,13 @@ export default function LAODashboardPage() {
         {resolvingDirective && (
           <ResolveDirectiveModal
             directive={resolvingDirective}
-            officerRole="LAO / Tehsildar"
+            officerRole="lao"
             onClose={() => setResolvingDirective(null)}
             onResolved={handleDirectiveResolved}
           />
         )}
-      </main>
-    </DashboardLayout>
+        </main>
+      </DashboardLayout>
+    </RoleGuard>
   );
 }

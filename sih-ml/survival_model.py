@@ -115,11 +115,11 @@ def compute_cph_survival(features: Dict[str, Any]) -> Dict[str, Any]:
     ]
 
     hazard_table = [
-        {"variable": "Litigation Velocity & Active Injunctions", "beta": round(betas["lit"], 3), "hazard_ratio": round(math.exp(betas["lit"] * indicators["lit"]), 2), "p_value": 0.0008, "active": bool(indicators["lit"] > 0.25)},
-        {"variable": "Compensation Payout Disbursal Lag", "beta": round(betas["comp"], 3), "hazard_ratio": round(math.exp(betas["comp"] * indicators["comp"]), 2), "p_value": 0.0124, "active": bool(indicators["comp"] > 0.35)},
-        {"variable": "Forest & Environment Stage-1 Overdue", "beta": round(betas["forest"], 3), "hazard_ratio": round(math.exp(betas["forest"] * indicators["forest"]), 2), "p_value": 0.0451, "active": bool(indicators["forest"] > 0.1)},
-        {"variable": "Right-of-Way Possession Refusal Rate", "beta": round(betas["poss"], 3), "hazard_ratio": round(math.exp(betas["poss"] * indicators["poss"]), 2), "p_value": 0.1802, "active": bool(indicators["poss"] > 0.2)},
-        {"variable": "LAO Sub-Divisional File Backlog Ratio", "beta": round(betas["backlog"], 3), "hazard_ratio": round(math.exp(betas["backlog"] * indicators["backlog"]), 2), "p_value": 0.0410, "active": bool(indicators["backlog"] > 0.2)},
+        {"variable": "Litigation Velocity & Active Injunctions", "beta": round(betas["lit"], 3), "hazard_ratio": round(math.exp(betas["lit"] * indicators["lit"]), 2), "statutory_basis": "RFCTLARR §15 / NJDG Injunction Velocity", "active": bool(indicators["lit"] > 0.25)},
+        {"variable": "Compensation Payout Disbursal Lag", "beta": round(betas["comp"], 3), "hazard_ratio": round(math.exp(betas["comp"] * indicators["comp"]), 2), "statutory_basis": "PFMS Section 38 Escrow Rule", "active": bool(indicators["comp"] > 0.35)},
+        {"variable": "Forest & Environment Stage-1 Overdue", "beta": round(betas["forest"], 3), "hazard_ratio": round(math.exp(betas["forest"] * indicators["forest"]), 2), "statutory_basis": "FCA 1980 / PARIVESH SLA Overrun", "active": bool(indicators["forest"] > 0.1)},
+        {"variable": "Right-of-Way Possession Refusal Rate", "beta": round(betas["poss"], 3), "hazard_ratio": round(math.exp(betas["poss"] * indicators["poss"]), 2), "statutory_basis": "Section 38(1) Voluntary Possession Barrier", "active": bool(indicators["poss"] > 0.2)},
+        {"variable": "LAO Sub-Divisional File Backlog Ratio", "beta": round(betas["backlog"], 3), "hazard_ratio": round(math.exp(betas["backlog"] * indicators["backlog"]), 2), "statutory_basis": "Revenue SDO Caseload Benchmark", "active": bool(indicators["backlog"] > 0.2)},
     ]
 
     return {

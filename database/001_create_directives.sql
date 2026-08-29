@@ -1,6 +1,4 @@
--- Migration: Create public.directives table for shared cross-role persistence
--- Replaces browser localStorage with true multi-user database storage
-
+-- Directives Table with Role-Based Row Level Security
 create table if not exists public.directives (
   id uuid primary key default gen_random_uuid(),
   project_id uuid references public.projects(id) on delete cascade,
@@ -18,21 +16,48 @@ create table if not exists public.directives (
   updated_at timestamptz default now()
 );
 
--- Enable Row Level Security
+-- Enable RLS
 alter table public.directives enable row level security;
 
--- Policies
-create policy "Authenticated users can read directives"
+-- Drop existing policies if any
+drop policy if exists "Authenticated users can select directives" on public.directives;
+drop policy if exists "Authenticated users can insert directives" on public.directives;
+drop policy if exists "Authenticated users can update directives" on public.directives;
+drop policy if exists "Allow all authenticated operations" on public.directives;
+
+-- 1. Read: Any authenticated officer can view active directives
+create policy "Authenticated users can select directives"
   on public.directives for select
   to authenticated
   using (true);
 
-create policy "Collectors can insert directives"
+-- 2. Insert: District Collectors can dispatch directives
+create policy "Authenticated users can insert directives"
   on public.directives for insert
   to authenticated
-  with check (true);
+  with check (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+      and profiles.role = 'collector'
+    )
+  );
 
-create policy "Assigned roles can update directives"
+-- 3. Update: Assigned officers (LAO, Patwari) or Collector can update status and resolution proof
+create policy "Authenticated users can update directives"
   on public.directives for update
   to authenticated
-  using (true);
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+      and profiles.role in ('collector', 'lao', 'patwari')
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = auth.uid()
+      and profiles.role in ('collector', 'lao', 'patwari')
+    )
+  );

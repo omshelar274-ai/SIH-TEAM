@@ -426,13 +426,14 @@ export default function NewProjectPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-400 mb-1">District</label>
-                <input
+                <select
                   required
-                  placeholder="e.g. Nagpur"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   value={form.district}
                   onChange={(e) => update("district", e.target.value)}
-                />
+                >
+                  <option value="Nagpur">Nagpur (Primary Target)</option>
+                </select>
               </div>
             </div>
 

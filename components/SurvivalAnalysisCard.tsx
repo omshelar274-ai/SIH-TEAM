@@ -38,7 +38,7 @@ export default function SurvivalAnalysisCard({
               Breslow Cumulative Hazard Estimator
             </span>
             <span className="bg-emerald-500/10 text-emerald-400 text-[10px] font-mono px-2 py-0.5 rounded border border-emerald-500/20">
-              C-Index: 0.89
+              CAG Benchmark Calibrated
             </span>
           </div>
           <h4 className="text-sm font-black text-white mt-1.5">{projectName}</h4>

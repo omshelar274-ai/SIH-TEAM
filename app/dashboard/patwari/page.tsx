@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { DirectiveItem } from "@/components/DirectivesModal";
 import DashboardLayout from "@/components/DashboardLayout";
+import RoleGuard from "@/components/RoleGuard";
 import ResolveDirectiveModal from "@/components/ResolveDirectiveModal";
 
 interface ProjectRow {
@@ -36,14 +37,39 @@ export default function PatwariDashboardPage() {
   const [directives, setDirectives] = useState<DirectiveItem[]>([]);
   const [resolvingDirective, setResolvingDirective] = useState<DirectiveItem | null>(null);
 
+  async function loadDirectives() {
+    try {
+      const { data: dbDirs } = await supabase
+        .from("directives")
+        .select("id, project_id, directive_type, title, description, target_days, assigned_to, status, created_at")
+        .order("created_at", { ascending: false });
+
+      if (dbDirs) {
+        setDirectives(
+          dbDirs
+            .filter((d: any) => d.assigned_to === "Patwari" || d.assigned_to === "patwari" || d.assigned_to === "LAO / Tehsildar")
+            .map((d: any) => ({
+              id: d.id,
+              projectId: d.project_id,
+              directiveType: d.directive_type,
+              title: d.title,
+              description: d.description,
+              targetDays: d.target_days,
+              assignedTo: d.assigned_to,
+              status: d.status,
+              createdAt: d.created_at,
+            }))
+        );
+      }
+    } catch {}
+  }
+
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-    setDirectives(saved.filter((d: DirectiveItem) => d.assignedTo === "Patwari" || d.assignedTo === "LAO / Tehsildar"));
+    loadDirectives();
   }, []);
 
   function handleDirectiveResolved(updated: DirectiveItem) {
-    const all = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-    setDirectives(all.filter((d: DirectiveItem) => d.assignedTo === "Patwari" || d.assignedTo === "LAO / Tehsildar"));
+    setDirectives((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
     load();
   }
 
@@ -117,7 +143,8 @@ export default function PatwariDashboardPage() {
   }
 
   return (
-    <DashboardLayout>
+    <RoleGuard allowedRoles={["patwari", "collector"]}>
+      <DashboardLayout>
       <main className="py-8 px-6 font-sans text-slate-100 min-h-screen">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
@@ -268,12 +295,13 @@ export default function PatwariDashboardPage() {
         {resolvingDirective && (
           <ResolveDirectiveModal
             directive={resolvingDirective}
-            officerRole="Patwari"
+            officerRole="patwari"
             onClose={() => setResolvingDirective(null)}
             onResolved={handleDirectiveResolved}
           />
         )}
-      </main>
-    </DashboardLayout>
+        </main>
+      </DashboardLayout>
+    </RoleGuard>
   );
 }

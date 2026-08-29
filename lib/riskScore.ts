@@ -21,6 +21,11 @@ export interface ProjectMetrics {
   isScheduleVTribal?: number;
   isForestLand?: number;
   isUrbanCommercial?: number;
+  dataQualityTier?: "VERIFIED" | "PARTIALLY_VERIFIED" | "PENDING_AUDIT" | "BASELINE_ESTIMATE";
+  verifiedFamiliesCount?: number;
+  pendingFamiliesCount?: number;
+  rejectedFamiliesCount?: number;
+  totalFamiliesCount?: number;
 }
 
 export interface DelayDriver {
@@ -51,7 +56,7 @@ export interface RiskResult {
   delayProb90d: number;
   delayProb180d: number;
   kaplanMeierCurve: Array<{ day: number; survivalRate: number }>;
-  cphHazardTable: Array<{ variable: string; coefficient: number; hazardRatio: number; pValue: number; active: boolean }>;
+  cphHazardTable: Array<{ variable: string; coefficient: number; hazardRatio: number; statutoryBasis?: string; pValue?: number; active: boolean }>;
   shapContributions: Array<{ factor: string; impact: number }>;
   modelDetails?: {
     classifier: string;
@@ -253,11 +258,11 @@ export function calculateRisk(m: ProjectMetrics): RiskResult {
   ];
 
   const cphHazardTable = [
-    { variable: "Litigation Velocity & Active Injunctions", coefficient: 0.88, hazardRatio: 2.41, pValue: 0.0008, active: Boolean(m.courtCasesActive > 3 || m.courtCasesRecent90d > 1) },
-    { variable: "Compensation Payout Disbursal Lag", coefficient: 0.64, hazardRatio: 1.90, pValue: 0.0124, active: Boolean(m.compensationPaidPct < 60) },
-    { variable: "Forest & Environment Stage-1 Overdue", coefficient: 0.52, hazardRatio: 1.68, pValue: 0.0451, active: Boolean(!m.forestClearanceApplied && forestDays > 30) },
-    { variable: "Right-of-Way Possession Refusal Rate", coefficient: 0.35, hazardRatio: 1.42, pValue: 0.1802, active: Boolean(m.possessionRefusingPct > 15) },
-    { variable: "LAO Sub-Divisional File Backlog Ratio", coefficient: 0.28, hazardRatio: 1.32, pValue: 0.0410, active: Boolean(backlogVal > 2.0) },
+    { variable: "Litigation Velocity & Active Injunctions", coefficient: 0.88, hazardRatio: 2.41, statutoryBasis: "RFCTLARR §15 / NJDG Injunction Velocity", active: Boolean(m.courtCasesActive > 3 || m.courtCasesRecent90d > 1) },
+    { variable: "Compensation Payout Disbursal Lag", coefficient: 0.64, hazardRatio: 1.90, statutoryBasis: "PFMS Section 38 Escrow Rule", active: Boolean(m.compensationPaidPct < 60) },
+    { variable: "Forest & Environment Stage-1 Overdue", coefficient: 0.52, hazardRatio: 1.68, statutoryBasis: "FCA 1980 / PARIVESH SLA Overrun", active: Boolean(!m.forestClearanceApplied && forestDays > 30) },
+    { variable: "Right-of-Way Possession Refusal Rate", coefficient: 0.35, hazardRatio: 1.42, statutoryBasis: "Section 38(1) Voluntary Possession Barrier", active: Boolean(m.possessionRefusingPct > 15) },
+    { variable: "LAO Sub-Divisional File Backlog Ratio", coefficient: 0.28, hazardRatio: 1.32, statutoryBasis: "Revenue SDO Caseload Benchmark", active: Boolean(backlogVal > 2.0) },
   ];
 
   const topDrivers = buildTopDrivers(m);

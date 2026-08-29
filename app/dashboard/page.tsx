@@ -10,6 +10,7 @@ import WhatIfSimulator from "@/components/WhatIfSimulator";
 import SurvivalAnalysisCard from "@/components/SurvivalAnalysisCard";
 import DirectivesModal, { DirectiveItem } from "@/components/DirectivesModal";
 import DashboardLayout from "@/components/DashboardLayout";
+import RoleGuard from "@/components/RoleGuard";
 import { NAGPUR_GEOJSON_FEATURES } from "@/lib/nagpurGeoData";
 
 interface ProjectWithRisk {
@@ -60,8 +61,31 @@ export default function DashboardPage() {
   const [issuedDirectives, setIssuedDirectives] = useState<DirectiveItem[]>([]);
 
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-    setIssuedDirectives(saved);
+    async function loadDirectives() {
+      try {
+        const { data: dbDirs } = await supabase
+          .from("directives")
+          .select("id, project_id, directive_type, title, description, target_days, assigned_to, status, created_at")
+          .order("created_at", { ascending: false });
+
+        if (dbDirs) {
+          setIssuedDirectives(
+            dbDirs.map((d: any) => ({
+              id: d.id,
+              projectId: d.project_id,
+              directiveType: d.directive_type,
+              title: d.title,
+              description: d.description,
+              targetDays: d.target_days,
+              assignedTo: d.assigned_to,
+              status: d.status,
+              createdAt: d.created_at,
+            }))
+          );
+        }
+      } catch {}
+    }
+    loadDirectives();
   }, []);
 
   async function loadData() {
@@ -291,7 +315,8 @@ export default function DashboardPage() {
   const totalPending = projects.reduce((acc, p) => acc + p.pendingFamiliesCount, 0);
 
   return (
-    <DashboardLayout>
+    <RoleGuard allowedRoles={["collector"]}>
+      <DashboardLayout>
       <main className="py-8 px-6 font-sans text-slate-100 min-h-screen">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Collector Header */}
@@ -516,7 +541,8 @@ export default function DashboardPage() {
             onDirectiveIssued={handleDirectiveIssued}
           />
         )}
-      </main>
-    </DashboardLayout>
+        </main>
+      </DashboardLayout>
+    </RoleGuard>
   );
 }

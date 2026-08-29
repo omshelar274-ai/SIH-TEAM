@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export interface DirectiveItem {
   id: string;
   projectId: string;
-  projectName: string;
-  directiveType: "CAMP" | "LEGAL" | "SURVEY" | "FOREST";
+  projectName?: string;
+  directiveType: "CAMP" | "LEGAL" | "SURVEY" | "FOREST" | "GENERAL";
   title: string;
   description: string;
   targetDays: number;
@@ -32,6 +33,8 @@ export default function DirectivesModal({
   const [assignedTo, setAssignedTo] = useState<"LAO / Tehsildar" | "Patwari">("LAO / Tehsildar");
   const [targetDays, setTargetDays] = useState<number>(7);
   const [customNote, setCustomNote] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const templates: Record<string, { title: string; desc: string; days: number; role: "LAO / Tehsildar" | "Patwari"; type: DirectiveItem["directiveType"] }> = {
     camp: {
@@ -43,7 +46,7 @@ export default function DirectivesModal({
     },
     legal: {
       title: "File High Court Stay Vacation Application",
-      desc: "Instruct Government Pleader to file urgent civil application for vacating interim stay on corridor parcels.",
+      desc: "Instruct Government Pleader to file urgent civil application for vacating interim stay on corridor parcels in Bombay High Court (Nagpur Bench).",
       days: 14,
       role: "LAO / Tehsildar",
       type: "LEGAL",
@@ -57,147 +60,182 @@ export default function DirectivesModal({
     },
     forest: {
       title: "Expedite Stage-1 Forest Clearance Proposal",
-      desc: "Submit online compliance report on Parivesh portal and coordinate with DFO Pune for joint site inspection.",
-      days: 5,
+      desc: "Submit online compliance report on Parivesh portal and coordinate with DFO Nagpur for joint site inspection.",
+      days: 14,
       role: "LAO / Tehsildar",
       type: "FOREST",
     },
   };
 
-  function handleSelectTemplate(key: string) {
+  function handleTemplateChange(key: string) {
     setTemplate(key);
-    const sel = templates[key];
-    if (sel) {
-      setTargetDays(sel.days);
-      setAssignedTo(sel.role);
+    if (templates[key]) {
+      setAssignedTo(templates[key].role);
+      setTargetDays(templates[key].days);
     }
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const sel = templates[template];
-    const newDirective: DirectiveItem = {
-      id: `dir-${Date.now()}`,
-      projectId,
-      projectName,
-      directiveType: sel.type,
-      title: sel.title,
-      description: customNote ? `${sel.desc} Note: ${customNote}` : sel.desc,
-      targetDays,
-      assignedTo,
-      status: "OPEN",
-      createdAt: new Date().toISOString(),
-    };
+  async function handleIssue() {
+    setSaving(true);
+    setError(null);
 
-    // Store in localStorage for instantaneous cross-tab sync between Collector, LAO, and Patwari
-    const existing = JSON.parse(localStorage.getItem("collector_directives") || "[]");
-    localStorage.setItem("collector_directives", JSON.stringify([newDirective, ...existing]));
+    const sel = templates[template] || templates.camp;
+    const finalDesc = customNote.trim() ? `${sel.desc} Note: ${customNote.trim()}` : sel.desc;
 
-    onDirectiveIssued(newDirective);
-    onClose();
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+
+      const newDirective = {
+        project_id: projectId,
+        directive_type: sel.type,
+        title: sel.title,
+        description: finalDesc,
+        target_days: targetDays,
+        assigned_to: assignedTo,
+        status: "OPEN",
+        created_by: userData.user?.id || null,
+      };
+
+      const { data, error: insertError } = await supabase
+        .from("directives")
+        .insert(newDirective)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.warn("Supabase insert notice:", insertError.message);
+      }
+
+      const clientItem: DirectiveItem = {
+        id: data?.id || `dir-${Date.now()}`,
+        projectId,
+        projectName,
+        directiveType: sel.type,
+        title: sel.title,
+        description: finalDesc,
+        targetDays,
+        assignedTo,
+        status: "OPEN",
+        createdAt: new Date().toISOString(),
+      };
+
+      onDirectiveIssued(clientItem);
+      onClose();
+    } catch (err: any) {
+      setError(err?.message || "Failed to dispatch directive.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-750 text-slate-100 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-5 animate-fade-in font-sans">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-700 text-slate-100 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-scale-in">
         <div className="flex justify-between items-start border-b border-slate-800 pb-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-amber-400 font-mono text-xs font-bold uppercase">
-                ● Collector Action Directive
-              </span>
-              <span className="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/30">
-                Official Order
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-widest">
+                District Collector Command Action
               </span>
             </div>
-            <h3 className="text-lg font-black text-white mt-1">Issue Administrative Directive</h3>
-            <p className="text-xs text-slate-400">Target Project: <b>{projectName}</b></p>
+            <h3 className="text-lg font-black text-white mt-1">Issue Executive Directive</h3>
+            <p className="text-xs text-slate-400 font-mono truncate max-w-sm">{projectName}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-lg flex items-center justify-center transition font-bold"
+            className="text-slate-400 hover:text-white text-sm bg-slate-800 hover:bg-slate-700 w-8 h-8 rounded-lg flex items-center justify-center transition"
           >
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs font-mono">
-          {/* Directive Type Presets */}
+        {error && (
+          <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <div className="space-y-4 text-xs font-mono">
           <div>
-            <label className="block text-slate-300 font-bold mb-2">Select Directive Template:</label>
+            <label className="block text-slate-300 font-bold mb-1.5">Action Template:</label>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(templates).map(([k, v]) => (
                 <button
                   key={k}
                   type="button"
-                  onClick={() => handleSelectTemplate(k)}
-                  className={`p-3 rounded-xl border text-left transition ${
+                  onClick={() => handleTemplateChange(k)}
+                  className={`p-2.5 rounded-xl border text-left transition ${
                     template === k
-                      ? "bg-indigo-600/20 border-indigo-500 text-white font-bold"
-                      : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200"
+                      ? "bg-indigo-600/30 border-indigo-500 text-white font-bold"
+                      : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
                   }`}
                 >
-                  <p className="text-[11px] leading-tight">{v.title}</p>
-                  <span className="text-[9px] text-slate-400 block mt-1">SLA: {v.days}d · {v.role}</span>
+                  <p className="text-[11px] font-bold text-white truncate">{v.title}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">{v.role} · {v.days}d SLA</p>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Assigned Authority */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-bold mb-1">Assigned Authority:</label>
+              <label className="block text-slate-300 font-bold mb-1.5">Assign Officer:</label>
               <select
                 value={assignedTo}
                 onChange={(e) => setAssignedTo(e.target.value as any)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-sans text-xs"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="LAO / Tehsildar">LAO / Tehsildar</option>
-                <option value="Patwari">Patwari (Talathi)</option>
+                <option value="Patwari">Field Patwari (Talathi)</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-slate-300 font-bold mb-1">Execution SLA Target:</label>
-              <input
-                type="number"
-                min="1"
-                max="60"
-                value={targetDays}
-                onChange={(e) => setTargetDays(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-sans text-xs"
-              />
+              <label className="block text-slate-300 font-bold mb-1.5">Statutory SLA Target:</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={targetDays}
+                  onChange={(e) => setTargetDays(Number(e.target.value))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+                <span className="text-slate-400 text-[11px]">Days</span>
+              </div>
             </div>
           </div>
 
-          {/* Custom Note */}
           <div>
-            <label className="block text-slate-300 font-bold mb-1">Additional Collector Remarks / Orders:</label>
+            <label className="block text-slate-300 font-bold mb-1.5">Specific Field Instructions (Optional):</label>
             <textarea
-              rows={2}
-              placeholder="e.g. Priority clearance for Section 3C objections in Wadgaon village."
+              rows={3}
+              placeholder="e.g. Prioritize Survey No. 42/1 and 42/2 in Godhani village; report compliance by Friday."
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-white font-sans text-xs"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
+        </div>
 
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1 py-2.5 text-xs font-sans"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary flex-1 py-2.5 text-xs font-sans font-bold bg-amber-600 hover:bg-amber-500 text-white"
-            >
-              🚀 Dispatch Binding Order
-            </button>
-          </div>
-        </form>
+        <div className="pt-2 border-t border-slate-800 flex justify-end gap-2.5 font-mono">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl font-bold transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={handleIssue}
+            className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white text-xs rounded-xl font-bold shadow-lg shadow-red-600/25 transition flex items-center gap-2 disabled:opacity-50"
+          >
+            {saving ? "Transmitting..." : "⚡ Issue Executive Directive"}
+          </button>
+        </div>
       </div>
     </div>
   );
