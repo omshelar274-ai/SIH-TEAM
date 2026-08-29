@@ -24,16 +24,30 @@ export default function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
 
         if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, role, district")
-            .eq("id", user.id)
-            .maybeSingle();
+          let profileData = null;
+          try {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name, role, district")
+              .eq("id", user.id)
+              .maybeSingle();
+            if (profile?.role) profileData = profile;
+          } catch {}
 
-          if (profile?.role) {
-            const role = profile.role.toLowerCase() as "collector" | "lao" | "patwari";
+          if (!profileData) {
+            try {
+              const apiRes = await fetch(`/api/auth/profile?userId=${user.id}`);
+              if (apiRes.ok) {
+                const resJson = await apiRes.json();
+                if (resJson?.profile?.role) profileData = resJson.profile;
+              }
+            } catch {}
+          }
+
+          if (profileData?.role) {
+            const role = profileData.role.toLowerCase() as "collector" | "lao" | "patwari";
             setUserRole(role);
-            if (profile.full_name) setUserName(profile.full_name);
+            if (profileData.full_name) setUserName(profileData.full_name);
             else if (user.email) setUserName(user.email.split("@")[0]);
 
             if (allowedRoles.includes(role)) {

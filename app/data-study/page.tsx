@@ -59,22 +59,33 @@ export default function DataStudyPage() {
       setError(null);
 
       try {
-        // Query live Supabase tables
-        const { data: projData, error: projErr } = await supabase
-          .from("projects")
-          .select("*")
-          .order("created_at", { ascending: false });
+        let projs: ProjectItem[] = [];
+        let fams: FamilyItem[] = [];
 
-        if (projErr) throw projErr;
+        // Primary: Query via server-side API (immune to client RLS recursion)
+        const res = await fetch("/api/study-data");
+        if (res.ok) {
+          const resData = await res.json();
+          projs = resData.projects || [];
+          fams = resData.families || [];
+        } else {
+          // Secondary fallback: Direct Supabase client query
+          const { data: projData, error: projErr } = await supabase
+            .from("projects")
+            .select("*")
+            .order("created_at", { ascending: false });
 
-        const { data: famData, error: famErr } = await supabase
-          .from("families")
-          .select("*");
+          if (projErr) throw projErr;
 
-        if (famErr) throw famErr;
+          const { data: famData, error: famErr } = await supabase
+            .from("families")
+            .select("*");
 
-        const projs: ProjectItem[] = projData || [];
-        const fams: FamilyItem[] = famData || [];
+          if (famErr) throw famErr;
+
+          projs = projData || [];
+          fams = famData || [];
+        }
 
         setProjects(projs);
         setFamilies(fams);

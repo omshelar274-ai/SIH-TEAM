@@ -13,16 +13,23 @@ export default function SystemAuditPage() {
   useEffect(() => {
     async function loadLiveCounts() {
       try {
-        const { count: projCount } = await supabase
-          .from("projects")
-          .select("*", { count: "exact", head: true });
+        const res = await fetch("/api/study-data");
+        if (res.ok) {
+          const resData = await res.json();
+          setProjectCount(resData.counts?.projects ?? 0);
+          setFamilyCount(resData.counts?.families ?? 0);
+        } else {
+          const { count: projCount } = await supabase
+            .from("projects")
+            .select("*", { count: "exact", head: true });
 
-        const { count: famCount } = await supabase
-          .from("families")
-          .select("*", { count: "exact", head: true });
+          const { count: famCount } = await supabase
+            .from("families")
+            .select("*", { count: "exact", head: true });
 
-        setProjectCount(projCount ?? 0);
-        setFamilyCount(famCount ?? 0);
+          setProjectCount(projCount ?? 0);
+          setFamilyCount(famCount ?? 0);
+        }
       } catch {
         // Leave as null if query fails to show honest unavailable state
       } finally {

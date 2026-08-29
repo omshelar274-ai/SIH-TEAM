@@ -143,15 +143,26 @@ export default function Sidebar() {
         }`}
       >
         {/* Top Branding & Profile */}
-        <div className="space-y-5">
-          <div className="flex items-center gap-3 px-2 pt-1">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-indigo-600/30">
-              LG
+        <div className="space-y-4">
+          <div className="px-2 pt-2">
+            <div className="flex items-center gap-3">
+              {/* Cadastral Grid Icon */}
+              <div className="grid grid-cols-2 gap-1 w-9 h-9 shrink-0">
+                <div className="w-4 h-4 rounded-md border-2 border-indigo-400 bg-indigo-500/25" />
+                <div className="w-4 h-4 rounded-md border-2 border-indigo-400 bg-indigo-500/25" />
+                <div className="w-4 h-4 rounded-md border-2 border-indigo-400 bg-indigo-500/25" />
+                <div className="w-4 h-4 rounded-md bg-gradient-to-br from-indigo-500 to-cyan-500 shadow-md shadow-indigo-500/40" />
+              </div>
+              <div>
+                <h1 className="text-base font-black tracking-wider text-white uppercase leading-none font-sans">
+                  BHU NIRIKSHAN
+                </h1>
+                <p className="text-xs font-bold text-indigo-400 tracking-wide mt-1">
+                  लोकहिताय निर्माणम्
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-sm font-black text-white tracking-wide">LandGuard</h1>
-              <p className="text-[10px] font-mono text-indigo-400">SIH 2026 · PS 26017</p>
-            </div>
+            <p className="text-[10px] font-mono text-slate-400 mt-2 px-1">SIH 2026 · PS 26017</p>
           </div>
 
           {/* Quick Role Switcher Bar */}

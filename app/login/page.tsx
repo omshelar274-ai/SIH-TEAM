@@ -57,23 +57,37 @@ export default function LoginPage() {
       const { data, error: signInError } = await Promise.race([authPromise, timeoutPromise]);
 
       if (data?.user) {
-        // Query existing linked profile from Supabase
-        const { data: profile, error: profError } = await supabase
-          .from("profiles")
-          .select("role, full_name, district")
-          .eq("id", data.user.id)
-          .maybeSingle();
+        // Query linked profile from Supabase (with resilient server API fallback)
+        let profileData = null;
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role, full_name, district")
+            .eq("id", data.user.id)
+            .maybeSingle();
+          if (profile?.role) profileData = profile;
+        } catch {}
 
-        if (profError || !profile || !profile.role) {
+        if (!profileData) {
+          try {
+            const apiRes = await fetch(`/api/auth/profile?userId=${data.user.id}`);
+            if (apiRes.ok) {
+              const resJson = await apiRes.json();
+              if (resJson?.profile?.role) profileData = resJson.profile;
+            }
+          } catch {}
+        }
+
+        if (!profileData || !profileData.role) {
           setError("Officer profile record not found in district registry. Please contact the District Administrator.");
           setLoading(false);
           return;
         }
 
-        const role = profile.role.toLowerCase() as "collector" | "lao" | "patwari";
+        const role = profileData.role.toLowerCase() as "collector" | "lao" | "patwari";
 
         sessionStorage.setItem("active_officer_role", role);
-        sessionStorage.setItem("active_officer_name", profile.full_name || email.split("@")[0]);
+        sessionStorage.setItem("active_officer_name", profileData.full_name || email.split("@")[0]);
 
         if (role === "patwari") {
           router.push("/dashboard/patwari");
@@ -82,7 +96,7 @@ export default function LoginPage() {
         } else if (role === "collector") {
           router.push("/dashboard");
         } else {
-          setError(`Unauthorized role: '${profile.role}'. Access restricted to registered district officers.`);
+          setError(`Unauthorized role: '${profileData.role}'. Access restricted to registered district officers.`);
           setLoading(false);
         }
       } else {
@@ -120,17 +134,34 @@ export default function LoginPage() {
         {/* Left — Branding & Hierarchy Overview */}
         <div className="text-white space-y-6">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-semibold mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-xs font-semibold mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
               SIH 2026 · PS 26017
             </div>
-            <h1 className="text-3xl lg:text-4xl font-black leading-tight">
-              LandGuard AI
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 text-xl lg:text-2xl font-bold mt-1">
-                Predictive Land Acquisition Analytics
-              </span>
-            </h1>
-            <p className="mt-3 text-slate-400 text-xs leading-relaxed max-w-sm">
+
+            {/* Prominent Bhu Nirikshan Brand */}
+            <div className="flex items-center gap-4 mb-4">
+              {/* Cadastral Grid Icon */}
+              <div className="grid grid-cols-2 gap-1.5 w-14 h-14 shrink-0">
+                <div className="w-6 h-6 rounded-lg border-2 border-indigo-400 bg-indigo-500/25" />
+                <div className="w-6 h-6 rounded-lg border-2 border-indigo-400 bg-indigo-500/25" />
+                <div className="w-6 h-6 rounded-lg border-2 border-indigo-400 bg-indigo-500/25" />
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 shadow-xl shadow-indigo-500/50" />
+              </div>
+              <div>
+                <h1 className="text-3xl lg:text-4xl font-black tracking-wider text-white uppercase font-sans leading-none">
+                  BHU NIRIKSHAN
+                </h1>
+                <p className="text-lg lg:text-xl font-bold text-indigo-400 tracking-wide mt-1.5">
+                  लोकहिताय निर्माणम्
+                </p>
+              </div>
+            </div>
+
+            <h2 className="text-lg lg:text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 to-cyan-300 mt-2">
+              Predictive Land Acquisition Analytics
+            </h2>
+            <p className="mt-2 text-slate-400 text-xs leading-relaxed max-w-sm">
               Early warning system for infrastructure project delays. Combines a trained risk classifier, delay regressor, and literature-calibrated survival modeling with role-based ground-truth verification.
             </p>
           </div>
