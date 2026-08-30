@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS public.administrative_alerts (
             'TEMPLATED_LITIGATION_CARTEL',
             'SCHEDULE_V_OBJECTION',
             'HIGH_UNCERTAINTY_SURVIVAL_ESTIMATE',
-            'HIGH_UNCERTAINTY_ENSEMBLE',
             'STATUTORY_SLA_OVERDUE'
         )
     ),
@@ -90,9 +89,9 @@ BEGIN
             (v_ring, 'DEPENDENCY_BOTTLENECK', 86, 'Forest & Environment Dept',
              'Stage-1 Tree Felling NOC overdue 48 days past SLA. Cascading 76-day delay onto PWD earthworks.',
              '{"sla_days":45,"elapsed":93,"cascade_days":76,"cost_escalation_pct":4.2}'::jsonb),
-            (v_ring, 'HIGH_UNCERTAINTY_ENSEMBLE', 71, 'ML Ensemble Engine',
-             'RSF and CPH models disagree by 22% on 90-day clearance probability for Waddhamna segment.',
-             '{"rsf_hr":3.45,"cph_hr":2.12,"disagreement_pct":22.1}'::jsonb);
+            (v_ring, 'HIGH_UNCERTAINTY_SURVIVAL_ESTIMATE', 71, 'Survival Analysis Engine',
+             'Elevated variance in 90-day clearance probability estimation for Waddhamna segment due to complex litigation age dispersion.',
+             '{"hazard_ratio":2.41,"confidence_interval_width":0.22,"statutory_uncertainty":"HIGH"}'::jsonb);
     END IF;
 
     IF v_ibfc IS NOT NULL THEN
