@@ -5,12 +5,17 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://sppndjaqnayuuoqyjcxm.supabase.co";
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwcG5kamFxbmF5dXVvcXlqY3htIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NzY1MzQwNywiZXhwIjoyMTAzMjI5NDA3fQ._ubKEH2mGAZ1FnkWyrnBZpbJykzkHD1CDdjUTvkIHoQ";
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json(
+        { error: "Server misconfigured: missing Supabase credentials" },
+        { status: 500 }
+      );
+    }
 
     const adminSupabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false },

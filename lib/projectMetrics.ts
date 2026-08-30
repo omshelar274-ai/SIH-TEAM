@@ -20,7 +20,7 @@ export interface ProjectRecord {
 
 /**
  * Aggregates real ground survey family rows, legal disputes, and R&R status from Supabase
- * into the ProjectMetrics structure consumed by our Multi-Model Ensemble.
+ * into the ProjectMetrics structure consumed by our Predictive ML & Survival Analysis Engine.
  */
 export async function fetchProjectMetrics(
   project: ProjectRecord

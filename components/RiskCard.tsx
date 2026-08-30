@@ -148,7 +148,7 @@ export default function RiskCard({
         {/* Top drivers */}
         <div className="p-5">
           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 font-mono">
-            ● Local Feature Attribution (SHAP)
+            ● Local Feature Attribution (Deviation-Weighted)
           </h3>
           <div className="space-y-3">
             {result.topDrivers.map((d) => (

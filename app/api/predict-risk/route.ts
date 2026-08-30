@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
             max: Math.round(predictedMonths + 3),
           },
           topDrivers: dynamicTopDrivers.length > 0 ? dynamicTopDrivers : baseResult.topDrivers,
-          cphHazardRatio: surv.ensemble_hazard_ratio ?? surv.hazard_ratio ?? surv.cph_hazard_ratio ?? baseResult.cphHazardRatio,
+          cphHazardRatio: surv.hazard_ratio ?? surv.cph_hazard_ratio ?? baseResult.cphHazardRatio,
           delayProb30d,
           delayProb60d,
           delayProb90d,

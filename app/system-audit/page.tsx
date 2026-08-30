@@ -13,22 +13,43 @@ export default function SystemAuditPage() {
   useEffect(() => {
     async function loadLiveCounts() {
       try {
-        const res = await fetch("/api/study-data");
+        let userDistrict = "Nagpur";
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("district")
+              .eq("id", user.id)
+              .maybeSingle();
+            if (profile?.district) userDistrict = profile.district;
+          }
+        } catch {}
+
+        const res = await fetch(`/api/study-data?district=${encodeURIComponent(userDistrict)}`);
         if (res.ok) {
           const resData = await res.json();
           setProjectCount(resData.counts?.projects ?? 0);
           setFamilyCount(resData.counts?.families ?? 0);
         } else {
-          const { count: projCount } = await supabase
+          const { data: projData, count: projCount } = await supabase
             .from("projects")
-            .select("*", { count: "exact", head: true });
+            .select("id", { count: "exact" })
+            .eq("district", userDistrict);
 
-          const { count: famCount } = await supabase
-            .from("families")
-            .select("*", { count: "exact", head: true });
+          const projectIds = (projData || []).map((p: any) => p.id);
+
+          let famCount = 0;
+          if (projectIds.length > 0) {
+            const { count } = await supabase
+              .from("families")
+              .select("id", { count: "exact", head: true })
+              .in("project_id", projectIds);
+            famCount = count ?? 0;
+          }
 
           setProjectCount(projCount ?? 0);
-          setFamilyCount(famCount ?? 0);
+          setFamilyCount(famCount);
         }
       } catch {
         // Leave as null if query fails to show honest unavailable state
@@ -138,12 +159,12 @@ export default function SystemAuditPage() {
                   3
                 </span>
                 <h2 className="text-sm font-bold text-white font-mono uppercase tracking-wider">
-                  Non-Causal Statistical Feature Attribution (SHAP)
+                  Non-Causal Statistical Feature Attribution (Deviation-Weighted)
                 </h2>
               </div>
               <div className="text-xs text-slate-300 space-y-2 leading-relaxed pl-8">
                 <p>
-                  <strong>Honest Disclosure:</strong> Local feature attributions (SHAP scores) identify mathematical correlations and decision tree splits; they do not prove direct legal or administrative causality.
+                  <strong>Honest Disclosure:</strong> Local feature attributions (deviation-weighted feature scores) identify mathematical deviations from empirical baseline statistics; they do not prove direct legal or administrative causality.
                 </p>
                 <p className="text-slate-400">
                   <strong>Administrative Context:</strong> An elevated feature attribution on "LAO Backlog Ratio" indicates that in projects with similar profiles, high backlog strongly correlates with delay; it does not legally imply negligence by individual officers. District Collectors should use these insights as early warning indicators rather than definitive judicial findings.

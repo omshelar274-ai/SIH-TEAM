@@ -36,3 +36,6 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
+*.tsbuildinfo
+__pycache__/
+*.pyc

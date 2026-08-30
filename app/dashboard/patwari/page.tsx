@@ -26,6 +26,7 @@ interface FamilySummary {
   pending: number;
   paid: number;
   activeCases: number;
+  error?: string | null;
 }
 
 export default function PatwariDashboardPage() {
@@ -91,11 +92,15 @@ export default function PatwariDashboardPage() {
       } catch {}
       setDistrict(userDistrict);
 
-      const { data: projectData } = await supabase
+      const { data: projectData, error: projErr } = await supabase
         .from("projects")
         .select("id, project_name, project_type, district, villages_affected, status, start_date, target_handover_date, est_families_affected")
         .eq("district", userDistrict)
         .order("created_at", { ascending: false });
+
+      if (projErr) {
+        console.error("[Patwari Dashboard] Error loading projects:", projErr);
+      }
 
       const rows = (projectData as ProjectRow[]) ?? [];
       setProjects(rows);
@@ -103,31 +108,46 @@ export default function PatwariDashboardPage() {
       const summaryMap: Record<string, FamilySummary> = {};
       await Promise.all(rows.map(async (p) => {
         try {
-          const { data: fams } = await supabase
+          const { data: fams, error: famsErr } = await supabase
             .from("families")
             .select("payment_status, court_case_status, verification_status")
             .eq("project_id", p.id);
 
-          summaryMap[p.id] = {
-            projectId: p.id,
-            total: fams?.length ?? 0,
-            pending: fams?.filter(f => f.verification_status === "Pending").length ?? 0,
-            paid: fams?.filter(f => f.payment_status === "Paid").length ?? 0,
-            activeCases: fams?.filter(f => f.court_case_status === "Active").length ?? 0,
-          };
-        } catch {
+          if (famsErr) {
+            console.error(`[Patwari Dashboard] Failed to load families for project ${p.id} (${p.project_name}):`, famsErr);
+            summaryMap[p.id] = {
+              projectId: p.id,
+              total: 0,
+              pending: 0,
+              paid: 0,
+              activeCases: 0,
+              error: famsErr.message || "Database query failed",
+            };
+          } else {
+            summaryMap[p.id] = {
+              projectId: p.id,
+              total: fams?.length ?? 0,
+              pending: fams?.filter(f => f.verification_status === "Pending").length ?? 0,
+              paid: fams?.filter(f => f.payment_status === "Paid").length ?? 0,
+              activeCases: fams?.filter(f => f.court_case_status === "Active").length ?? 0,
+              error: null,
+            };
+          }
+        } catch (err: any) {
+          console.error(`[Patwari Dashboard] Exception loading families for project ${p.id}:`, err);
           summaryMap[p.id] = {
             projectId: p.id,
             total: 0,
             pending: 0,
             paid: 0,
             activeCases: 0,
+            error: err?.message || "Unexpected query failure",
           };
         }
       }));
       setSummaries(summaryMap);
     } catch (err) {
-      console.warn("Patwari load error:", err);
+      console.error("[Patwari Dashboard] Critical load error:", err);
     } finally {
       setLoading(false);
     }
@@ -250,6 +270,14 @@ export default function PatwariDashboardPage() {
                         <span className="text-xs font-bold text-amber-400">{daysLeft} days remaining</span>
                       </div>
                     </div>
+
+                    {/* Error Banner if Query Failed */}
+                    {summary.error && (
+                      <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-3 text-xs text-red-300 flex items-center gap-2">
+                        <span className="text-red-400 font-bold">⚠</span>
+                        <span>Could not load family records: {summary.error}</span>
+                      </div>
+                    )}
 
                     {/* Summary Metric Strip */}
                     <div className="grid grid-cols-4 gap-2 text-center text-xs font-mono">

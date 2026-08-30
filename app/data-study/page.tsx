@@ -59,27 +59,46 @@ export default function DataStudyPage() {
       setError(null);
 
       try {
+        let userDistrict = "Nagpur";
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("district")
+              .eq("id", user.id)
+              .maybeSingle();
+            if (profile?.district) userDistrict = profile.district;
+          }
+        } catch {}
+
         let projs: ProjectItem[] = [];
         let fams: FamilyItem[] = [];
 
-        // Primary: Query via server-side API (immune to client RLS recursion)
-        const res = await fetch("/api/study-data");
+        // Primary: Query via server-side API scoped to active district
+        const res = await fetch(`/api/study-data?district=${encodeURIComponent(userDistrict)}`);
         if (res.ok) {
           const resData = await res.json();
           projs = resData.projects || [];
           fams = resData.families || [];
         } else {
-          // Secondary fallback: Direct Supabase client query
+          // Secondary fallback: Direct Supabase client query scoped to district
           const { data: projData, error: projErr } = await supabase
             .from("projects")
             .select("*")
+            .eq("district", userDistrict)
             .order("created_at", { ascending: false });
 
           if (projErr) throw projErr;
 
-          const { data: famData, error: famErr } = await supabase
-            .from("families")
-            .select("*");
+          const projectIds = (projData || []).map((p: any) => p.id);
+
+          let famQuery = supabase.from("families").select("*");
+          if (projectIds.length > 0) {
+            famQuery = famQuery.in("project_id", projectIds);
+          }
+
+          const { data: famData, error: famErr } = await famQuery;
 
           if (famErr) throw famErr;
 

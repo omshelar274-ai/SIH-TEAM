@@ -40,15 +40,23 @@ export default function FamiliesPage() {
   });
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoName, setPhotoName] = useState<string | null>(null);
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function loadFamilies() {
-    const { data } = await supabase
+    setQueryError(null);
+    const { data, error } = await supabase
       .from("families")
       .select("*")
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
-    if (data) setFamilies(data as Family[]);
+
+    if (error) {
+      console.error("[Families Page] Failed to load families from Supabase:", error);
+      setQueryError(error.message);
+    } else if (data) {
+      setFamilies(data as Family[]);
+    }
   }
 
   useEffect(() => {
@@ -351,6 +359,14 @@ export default function FamiliesPage() {
             {saving ? "Transmitting Ground Record to LAO Queue..." : "+ Submit Survey Entry for LAO Audit & Approval"}
           </button>
         </form>
+
+        {/* Error Banner if Query Failed */}
+        {queryError && (
+          <div className="bg-red-950/40 border border-red-800/60 rounded-xl p-4 text-xs text-red-300 flex items-center gap-2">
+            <span className="text-red-400 font-bold">⚠</span>
+            <span>Could not load family records: {queryError}</span>
+          </div>
+        )}
 
         {/* Existing Beneficiary Records List */}
         <div className="space-y-3">

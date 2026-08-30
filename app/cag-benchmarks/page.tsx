@@ -35,7 +35,7 @@ const CAG_CASES: AuditCase[] = [
     findings:
       "CAG Performance Audit revealed that delays in land handover by BMRCL led to idle contractor machinery claims of ₹154 Crore and extended project completion by 28 months.",
     leadTimeGainText:
-      "Our Point-in-Time CPH model fired a CRITICAL (Risk Score 88/100) early warning at Month 8, providing administrators 14 months of lead-time before construction halted.",
+      "Our Point-in-Time Survival Hazard model fired a CRITICAL (Risk Score 88/100) early warning at Month 8, providing administrators 14 months of lead-time before construction halted.",
   },
   {
     id: "ecr-hajipur",

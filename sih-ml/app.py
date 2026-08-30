@@ -1,7 +1,7 @@
 """
 SIH 2026 Release Candidate: LandGuard AI Intelligence API v3.0
 Production-grade FastAPI service with:
-  1. /predict — Multi-Model Ensemble (RSF 80% + CPH 20%) + Local Feature Attribution
+  1. /predict — Predictive Risk & Delay Intelligence (GradientBoosting Classifier + RandomForest Regressor + Breslow Survival Hazard) + Local Feature Attribution
   2. /statutory/compensation — RFCTLARR Sec 23/26/30 Multiplier + Solatium Calculator
   3. /statutory/bhoomi-rashi — Bhoomi Rashi Lifecycle State Machine Emulator
   4. /analytics/bottlenecks — Inter-Departmental SLA Cascade Tracker

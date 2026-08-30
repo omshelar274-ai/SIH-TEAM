@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.administrative_alerts (
             'PROXY_LAWYER_POOLING',
             'TEMPLATED_LITIGATION_CARTEL',
             'SCHEDULE_V_OBJECTION',
+            'HIGH_UNCERTAINTY_SURVIVAL_ESTIMATE',
             'HIGH_UNCERTAINTY_ENSEMBLE',
             'STATUTORY_SLA_OVERDUE'
         )

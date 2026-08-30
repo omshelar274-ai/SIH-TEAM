@@ -287,8 +287,8 @@ export function calculateRisk(m: ProjectMetrics): RiskResult {
     cphHazardTable,
     shapContributions,
     modelDetails: {
-      classifier: "GradientBoostingClassifier (Scikit-Learn)",
-      regressor: "RandomForestRegressor (Scikit-Learn)",
+      classifier: "Rule-Based Heuristic (ML service unreachable)",
+      regressor: "Rule-Based Heuristic (ML service unreachable)",
       survivalMethod: "Literature-Calibrated Breslow Hazard Model",
     },
   };
