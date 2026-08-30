@@ -94,19 +94,26 @@ export default function LAODashboardPage() {
         return;
       }
 
+      let hasQueryError = false;
       const projectsWithCounts = await Promise.all(
         (projectData as ProjectRecord[]).map(async (project) => {
           let pending = 0;
           let total = 0;
           try {
-            const { data: families } = await supabase
+            const { data: families, error: famErr } = await supabase
               .from("families")
               .select("verification_status")
               .eq("project_id", project.id);
 
-            pending = families?.filter((f) => f.verification_status === "Pending").length ?? 0;
-            total = families?.length ?? 0;
-          } catch {}
+            if (famErr) {
+              hasQueryError = true;
+            } else {
+              pending = families?.filter((f) => f.verification_status === "Pending").length ?? 0;
+              total = families?.length ?? 0;
+            }
+          } catch {
+            hasQueryError = true;
+          }
 
           return {
             project,
@@ -115,6 +122,26 @@ export default function LAODashboardPage() {
           };
         })
       );
+
+      // Resilient fallback: If client query was blocked by RLS recursion, fetch through server API
+      if (hasQueryError) {
+        try {
+          const res = await fetch(`/api/study-data?district=${encodeURIComponent(userDistrict)}`);
+          if (res.ok) {
+            const { families: allFams } = await res.json();
+            const populated = (projectData as ProjectRecord[]).map((project) => {
+              const pFams = (allFams || []).filter((f: any) => f.project_id === project.id);
+              return {
+                project,
+                pendingCount: pFams.filter((f: any) => f.verification_status === "Pending").length,
+                totalCount: pFams.length,
+              };
+            });
+            setProjects(populated);
+            return;
+          }
+        } catch {}
+      }
 
       setProjects(projectsWithCounts);
     } catch (err) {

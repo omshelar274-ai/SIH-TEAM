@@ -127,7 +127,9 @@ export default function DashboardPage() {
                 .from("families")
                 .select("verification_status")
                 .eq("project_id", project.id);
-              pendingCount = families?.filter((f) => f.verification_status === "Pending").length ?? 0;
+              if (families && families.length > 0) {
+                pendingCount = families.filter((f) => f.verification_status === "Pending").length;
+              }
             } catch {}
 
             const { result, source } = await predictRisk(metrics, project.total_land_area_hectares, project.est_families_affected);

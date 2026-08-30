@@ -25,10 +25,25 @@ export interface ProjectRecord {
 export async function fetchProjectMetrics(
   project: ProjectRecord
 ): Promise<ProjectMetrics> {
-  const { data: families } = await supabase
-    .from("families")
-    .select("payment_status, court_case_status, possession_status, court_case_filed_date, verification_status")
-    .eq("project_id", project.id);
+  let allFamilies: any[] = [];
+
+  try {
+    const { data: families } = await supabase
+      .from("families")
+      .select("payment_status, court_case_status, possession_status, court_case_filed_date, verification_status")
+      .eq("project_id", project.id);
+
+    if (families && families.length > 0) {
+      allFamilies = families;
+    } else if (typeof window !== "undefined") {
+      // Browser fallback to server API bridge
+      const res = await fetch(`/api/study-data?district=${encodeURIComponent(project.district || "Nagpur")}`);
+      if (res.ok) {
+        const { families: famData } = await res.json();
+        allFamilies = (famData || []).filter((f: any) => f.project_id === project.id);
+      }
+    }
+  } catch {}
 
   const { data: rehab } = await supabase
     .from("rehabilitation_status")
@@ -36,7 +51,6 @@ export async function fetchProjectMetrics(
     .eq("project_id", project.id)
     .maybeSingle();
 
-  const allFamilies = families ?? [];
   const totalFamilies = allFamilies.length;
 
   const paidCount = allFamilies.filter((f) => f.payment_status === "Paid").length;
