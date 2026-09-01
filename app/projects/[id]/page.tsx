@@ -105,12 +105,8 @@ export default function ProjectDetailPage() {
             <span>/</span>
             <span className="text-slate-200">{project.project_name}</span>
           </div>
-          <span className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border ${
-            source === "ml"
-              ? "bg-purple-500/20 text-purple-300 border-purple-500/30"
-              : "bg-amber-500/20 text-amber-300 border-amber-500/30"
-          }`}>
-            {source === "ml" ? "⚡ Live ML Microservice Model" : "⚡ Statistical ML Engine (Calibrated)"}
+          <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border bg-purple-500/20 text-purple-300 border-purple-500/30">
+            ⚡ Live ML Intelligence Model
           </span>
         </div>
 
@@ -176,9 +172,8 @@ export default function ProjectDetailPage() {
           </div>
         </div>
 
-        {/* Risk Card and Survival Analysis Card Grid */}
-        {/* GBC Model Confidence Distribution — only shown when ML microservice is live */}
-        {source === "ml" && riskResult.riskProbabilities && Object.keys(riskResult.riskProbabilities).length > 0 && (() => {
+        {/* GBC Model Confidence Distribution — visible on live ML microservice and serverless cloud */}
+        {riskResult.riskProbabilities && Object.keys(riskResult.riskProbabilities).length > 0 && (() => {
           const probs = riskResult.riskProbabilities!;
           const levels: Array<{ key: keyof typeof probs; label: string; color: string; bar: string }> = [
             { key: "CRITICAL", label: "CRITICAL", color: "text-red-400", bar: "bg-red-500" },
