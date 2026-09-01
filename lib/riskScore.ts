@@ -63,6 +63,12 @@ export interface RiskResult {
     regressor: string;
     survivalMethod: string;
   };
+  riskProbabilities?: {
+    LOW?: number;
+    MODERATE?: number;
+    HIGH?: number;
+    CRITICAL?: number;
+  };
 }
 
 export function buildTopDrivers(m: ProjectMetrics): DelayDriver[] {

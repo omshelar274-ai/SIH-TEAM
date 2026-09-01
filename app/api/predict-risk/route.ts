@@ -205,6 +205,7 @@ export async function POST(req: NextRequest) {
             regressor: "RandomForestRegressor (Scikit-Learn)",
             survivalMethod: "Literature-Calibrated Breslow Hazard Model",
           },
+          riskProbabilities: ml.risk_probabilities || {},
           shapContributions: dynamicTopDrivers.map((d) => ({
             factor: d.driver,
             impact: d.impactPct,
