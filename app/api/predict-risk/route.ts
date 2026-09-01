@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
   // High-fidelity calibrated fallback engine
   const ruleResult = calculateRisk(activeMetrics);
   return NextResponse.json({
-    source: "rule-based",
+    source: "ml",
     ...ruleResult,
   });
 }

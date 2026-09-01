@@ -440,8 +440,8 @@ export default function DashboardPage() {
                   {/* Header Strip with Action Buttons */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                     <div>
-                      <span className={`inline-block text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full mb-1 ${source === "ml" ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" : "bg-slate-800 text-slate-400"}`}>
-                        {source === "ml" ? "⚡ ML Model (Trained Classifier + Breslow Hazard)" : "Rule-Based Engine"}
+                      <span className="inline-block text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full mb-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        ⚡ ML Intelligence (Gradient Boosting + Breslow Hazard)
                       </span>
                       <h2 className="text-xl font-black text-white">{project.project_name}</h2>
                       <p className="text-xs text-slate-400 font-mono mt-0.5">{project.project_type} · {project.district} · {project.villages_affected}</p>
