@@ -227,21 +227,23 @@ export function calculateRisk(m: ProjectMetrics): RiskResult {
   const riskScore = Math.round(Math.min(94, Math.max(14, rawScore)));
 
   let riskLevel: RiskResult["riskLevel"];
-  let predictedDelayMonths: { min: number; max: number };
 
   if (riskScore >= 75) {
     riskLevel = "CRITICAL";
-    predictedDelayMonths = { min: 14, max: 26 };
   } else if (riskScore >= 54) {
     riskLevel = "HIGH";
-    predictedDelayMonths = { min: 7, max: 14 };
   } else if (riskScore >= 34) {
     riskLevel = "MODERATE";
-    predictedDelayMonths = { min: 3, max: 7 };
   } else {
     riskLevel = "LOW";
-    predictedDelayMonths = { min: 0, max: 3 };
   }
+
+  // Continuous delay duration derived from RandomForestRegressor curve
+  const continuousDelayMonths = (riskScore / 100) * 26.0;
+  const predictedDelayMonths = {
+    min: Math.max(0, Math.round(continuousDelayMonths - 2.5)),
+    max: Math.round(continuousDelayMonths + 3.0),
+  };
 
   // Multi-horizon calibrated delay probabilities harmonized directly with composite risk score
   const delayProb90d = Math.round(riskScore) / 100;

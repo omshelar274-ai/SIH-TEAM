@@ -34,6 +34,11 @@ export default function WhatIfSimulator({
   const deltaScore = simulatedResult.riskScore - baseResult.riskScore;
   const isImproved = deltaScore < 0;
 
+  // Compute exact continuous delay reduction in months
+  const baseEstMonths = (baseResult.riskScore / 100) * 26.0;
+  const simEstMonths = (simulatedResult.riskScore / 100) * 26.0;
+  const monthsSaved = Math.round((baseEstMonths - simEstMonths) * 10) / 10;
+
   return (
     <div className="bg-slate-900 border border-slate-700 text-slate-100 rounded-2xl p-6 shadow-2xl space-y-6">
       <div className="flex justify-between items-start border-b border-slate-800 pb-4">
@@ -66,23 +71,25 @@ export default function WhatIfSimulator({
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Current Score</p>
           <p className="text-2xl font-black text-slate-200 mt-0.5">{baseResult.riskScore}/100</p>
-          <span className="text-[10px] text-slate-400 font-mono">{baseResult.riskLevel}</span>
+          <span className="text-[10px] text-slate-400 font-mono">{baseResult.riskLevel} · ~{Math.round(baseEstMonths)} mo delay</span>
         </div>
         <div className="border-x border-slate-800 px-2">
           <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider font-mono">Simulated Score</p>
           <p className={`text-2xl font-black mt-0.5 ${simulatedResult.riskScore > 60 ? "text-amber-400" : "text-emerald-400"}`}>
             {simulatedResult.riskScore}/100
           </p>
-          <span className="text-[10px] text-indigo-300 font-mono">{simulatedResult.riskLevel}</span>
+          <span className="text-[10px] text-indigo-300 font-mono">{simulatedResult.riskLevel} · ~{Math.round(simEstMonths)} mo delay</span>
         </div>
         <div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">Net Impact</p>
           <p className={`text-2xl font-black mt-0.5 ${isImproved ? "text-emerald-400" : deltaScore === 0 ? "text-slate-400" : "text-red-400"}`}>
             {isImproved ? `▼ ${Math.abs(deltaScore)} pts` : deltaScore === 0 ? "0 pts" : `▲ +${deltaScore} pts`}
           </p>
-          <span className="text-[10px] text-slate-400 font-mono">
-            {simulatedResult.predictedDelayMonths.max < baseResult.predictedDelayMonths.max
-              ? `~${baseResult.predictedDelayMonths.max - simulatedResult.predictedDelayMonths.max} mo saved`
+          <span className={`text-[10px] font-mono font-bold ${monthsSaved > 0 ? "text-emerald-400" : monthsSaved < 0 ? "text-red-400" : "text-slate-400"}`}>
+            {monthsSaved > 0
+              ? `⚡ ~${monthsSaved.toFixed(1)} mo saved`
+              : monthsSaved < 0
+              ? `⚠ +${Math.abs(monthsSaved).toFixed(1)} mo added`
               : "No delay delta"}
           </span>
         </div>
