@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function DemoWalkthroughPage() {
   const [step, setStep] = useState(0);
@@ -44,7 +45,7 @@ export default function DemoWalkthroughPage() {
     },
     {
       title: "6. Interactive What-If Policy Simulation Sliders",
-      desc: "Live sensitivity sliders for Compensation Disbursal %, Stay Orders, and Litigation Counts showing instantaneous simulated risk score drops and months saved.",
+      desc: "Live sensitivity sliders for Compensation Disbursal %, Stay Orders, and Litigation Counts showing instantaneous simulated risk score drops and continuous months saved.",
       action: "Open the What-If Simulator on any project card to test policy interventions.",
       route: "/dashboard",
       badge: "Policy Simulator",
@@ -89,113 +90,120 @@ export default function DemoWalkthroughPage() {
   const current = demoSteps[step];
 
   return (
-    <main className="max-w-4xl mx-auto px-6 py-10 font-sans text-slate-100">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-indigo-400 font-mono text-xs font-bold uppercase">
-              ● SIH 2026 Presentation Mode
-            </span>
-            <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2.5 py-0.5 rounded-full border border-indigo-500/30">
-              Judges & Evaluators Tour
-            </span>
+    <DashboardLayout>
+      <main className="max-w-5xl mx-auto px-6 py-10 font-sans text-slate-100 min-h-screen">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 border-b border-slate-800 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-indigo-400 font-mono text-xs font-bold uppercase tracking-wider">
+                ● SIH 2026 Presentation Mode
+              </span>
+              <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2.5 py-0.5 rounded-full border border-indigo-500/30 font-bold">
+                Judges &amp; Evaluators Tour
+              </span>
+            </div>
+            <h1 className="text-3xl font-black text-white mt-1 tracking-tight">
+              Guided System Walkthrough
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Step-by-step tour covering all technical pillars, predictive models, statutory timelines, and administrative workflows.
+            </p>
           </div>
-          <h1 className="text-3xl font-black text-white mt-1 tracking-tight">
-            Guided System Walkthrough
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Step-by-step tour covering all technical pillars, predictive models, statutory timelines, and administrative workflows.
-          </p>
-        </div>
-        <Link
-          href="/dashboard"
-          className="btn-secondary text-xs px-4 py-2"
-        >
-          ← Exit to Dashboard
-        </Link>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="mb-6 space-y-2">
-        <div className="flex justify-between text-xs text-slate-400 font-mono">
-          <span>Step {step + 1} of {demoSteps.length}</span>
-          <span className="text-indigo-400 font-bold">{current.badge}</span>
-        </div>
-        <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-          <div
-            className="bg-indigo-600 h-full transition-all duration-300 rounded-full"
-            style={{ width: `${((step + 1) / demoSteps.length) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Main Step Card */}
-      <div className="bg-slate-900 border border-slate-750 rounded-2xl p-8 shadow-2xl space-y-6 animate-fade-in">
-        <div className="flex justify-between items-start">
-          <h2 className="text-xl font-extrabold text-white">{current.title}</h2>
-          <span className="bg-indigo-500/10 text-indigo-400 text-xs px-3 py-1 rounded-full border border-indigo-500/20 font-mono font-bold">
-            {current.badge}
-          </span>
-        </div>
-
-        <p className="text-sm text-slate-300 leading-relaxed font-sans">
-          {current.desc}
-        </p>
-
-        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1.5 font-mono text-xs">
-          <span className="text-indigo-400 font-bold">⚡ Recommended Live Action:</span>
-          <p className="text-slate-300">{current.action}</p>
-        </div>
-
-        <div className="flex justify-between items-center pt-4 border-t border-slate-800">
           <Link
-            href={current.route}
-            className="btn-primary text-xs px-5 py-2.5 flex items-center gap-2 font-bold"
+            href="/dashboard"
+            className="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 text-xs px-4 py-2 rounded-xl font-bold transition flex items-center gap-1.5 self-start"
           >
-            <span>Open Feature in App</span>
-            <span>↗</span>
+            <span>← Exit to Dashboard</span>
           </Link>
+        </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => setStep(Math.max(0, step - 1))}
-              disabled={step === 0}
-              className="btn-secondary text-xs px-4 py-2 disabled:opacity-30"
-            >
-              ← Previous
-            </button>
-            <button
-              onClick={() => setStep(Math.min(demoSteps.length - 1, step + 1))}
-              disabled={step === demoSteps.length - 1}
-              className="btn-primary text-xs px-5 py-2 disabled:opacity-30"
-            >
-              Next Step →
-            </button>
+        {/* Progress Bar */}
+        <div className="mb-6 space-y-2">
+          <div className="flex justify-between text-xs text-slate-400 font-mono">
+            <span>Step {step + 1} of {demoSteps.length}</span>
+            <span className="text-indigo-400 font-bold">{current.badge}</span>
+          </div>
+          <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+            <div
+              className="bg-indigo-600 h-full transition-all duration-300 rounded-full"
+              style={{ width: `${((step + 1) / demoSteps.length) * 100}%` }}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Steps Quick Selector */}
-      <div className="mt-8">
-        <p className="text-xs font-bold text-slate-400 uppercase font-mono mb-3">Jump to Demonstration Step:</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {demoSteps.map((s, idx) => (
-            <button
-              key={idx}
-              onClick={() => setStep(idx)}
-              className={`p-3 rounded-xl border text-left text-xs transition ${
-                step === idx
-                  ? "bg-indigo-600/20 border-indigo-500 text-white font-bold"
-                  : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200"
-              }`}
+        {/* Main Step Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6 animate-fade-in">
+          <div className="flex justify-between items-start gap-4">
+            <h2 className="text-xl font-extrabold text-white">{current.title}</h2>
+            <span className="bg-indigo-500/10 text-indigo-400 text-xs px-3 py-1 rounded-full border border-indigo-500/20 font-mono font-bold shrink-0">
+              {current.badge}
+            </span>
+          </div>
+
+          <p className="text-sm text-slate-300 leading-relaxed font-sans">
+            {current.desc}
+          </p>
+
+          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800/80 space-y-1.5 font-mono text-xs">
+            <span className="text-indigo-400 font-bold flex items-center gap-1.5">
+              <span>⚡</span> Recommended Live Action:
+            </span>
+            <p className="text-slate-200 mt-1">{current.action}</p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-800">
+            <Link
+              href={current.route}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-5 py-2.5 rounded-xl flex items-center gap-2 font-bold shadow-lg shadow-indigo-600/25 transition active:scale-95"
             >
-              <span className="text-[10px] text-indigo-400 font-mono block">Step {idx + 1}</span>
-              <p className="truncate mt-0.5">{s.title.replace(/^\d+\.\s*/, "")}</p>
-            </button>
-          ))}
+              <span>Open Feature in App</span>
+              <span>↗</span>
+            </Link>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setStep(Math.max(0, step - 1))}
+                disabled={step === 0}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs px-4 py-2 rounded-xl font-bold transition disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              <button
+                onClick={() => setStep(Math.min(demoSteps.length - 1, step + 1))}
+                disabled={step === demoSteps.length - 1}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-5 py-2 rounded-xl font-bold transition disabled:opacity-30 disabled:cursor-not-allowed shadow-md shadow-indigo-600/20"
+              >
+                Next Step →
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </main>
+
+        {/* Steps Quick Selector */}
+        <div className="mt-8">
+          <p className="text-xs font-bold text-slate-400 uppercase font-mono mb-3 tracking-wider">
+            Jump to Demonstration Step:
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5">
+            {demoSteps.map((s, idx) => (
+              <button
+                key={idx}
+                onClick={() => setStep(idx)}
+                className={`p-3 rounded-xl border text-left text-xs transition ${
+                  step === idx
+                    ? "bg-indigo-600/20 border-indigo-500 text-white font-bold shadow-md shadow-indigo-600/10"
+                    : "bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+                }`}
+              >
+                <span className="text-[10px] text-indigo-400 font-mono block">Step {idx + 1}</span>
+                <p className="truncate mt-0.5">{s.title.replace(/^\d+\.\s*/, "")}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    </DashboardLayout>
   );
 }
+

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { NAGPUR_PROJECTS, KnownProject } from "@/lib/nagpurProjects";
+import DashboardLayout from "@/components/DashboardLayout";
+import RoleGuard from "@/components/RoleGuard";
 
 const PROJECT_TYPES = [
   "Highway",
@@ -281,8 +283,9 @@ export default function NewProjectPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 py-10 px-6 font-sans text-slate-100">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <RoleGuard allowedRoles={["collector"]}>
+      <DashboardLayout>
+        <main className="min-h-screen py-8 px-6 font-sans text-slate-100 max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div>
@@ -530,7 +533,8 @@ export default function NewProjectPage() {
             </button>
           </form>
         </div>
-      </div>
-    </main>
+        </main>
+      </DashboardLayout>
+    </RoleGuard>
   );
 }
